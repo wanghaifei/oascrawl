@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * Class Detail_model
+ */
+
+class Detail_model extends CI_Model {
+
+    var $collection = 'detail';
+    var $detail_table = '';
+
+    /**
+     * _id:  对url使用md5过的值，确保唯一。
+     * tagid: 集合tags 字段_id. 父id
+     * url： 所抓取的url。
+     * created:  创建时间.
+     * tags:  该标签所属标签列表。
+     * classid: 分类id，对应index集合（sports, humor, ......................）
+     * title: 标题
+     * description: 描述,缩率信息
+     * content: 主要内容.
+     */
+    var $detail_fields = array();
+
+    function __construct() {
+        parent::__construct();
+        $this->load->library('mongo_db');
+        $this->mongo_db->switch_db($this->collection);
+    }
+
+    /**
+     *
+     * @param $tablename
+     */
+    public function setTableName($tablename)
+    {
+        $this->detail_table = $tablename;
+    }
+
+    /**
+     * @access public
+     * @param array/string $condition 要查寻的条件 [Optional]
+     * @param int $offset 查寻时的偏移量 [Optional]
+     * @param int $limit 每次查寻的记录数 [Optional]
+     * @param  $total 要查寻排序的条件 [Optional]
+     * @return array $mixed
+     */
+    public function find($condition=array(), $offset=0, $limit=20, $total = false){
+        if( ! empty($condition) ) {
+            $this->mongo_db->where($condition);
+        }
+        if($total){
+            return $this->mongo_db->count($this->detail_table);
+        }
+        $limit && $this->mongo_db->limit($limit);
+        $offset && $this->mongo_db->offset($offset);
+
+        return $this->mongo_db->get($this->detail_table);
+    }
+
+    /**
+     * 根据id获取信息
+     * @param $id
+     * @return mixed
+     */
+    public function findOne($condition)
+    {
+        if ($lists = $this->find($condition, 0, 1)) {
+            return $lists[0];
+        }
+        return false;
+    }
+
+    /**
+     * 根据id获取信息
+     * @param $id
+     * @return mixed
+     */
+    public function findOneByID($id)
+    {
+        $condition = array('_id'=>$id);
+        return $this->findOne($condition);
+    }
+
+    /**
+     * 根据url获取信息
+     * @param $url
+     * @return mixed
+     */
+    public function findOneByUrl($url)
+    {
+        return $this->findOneByID(md5($url));
+    }
+
+    /**
+     * @param $pid
+     * @param $url
+     * @param $tags
+     * @param $classid
+     * @return mixed
+     */
+    public function add($pid, $url, $tags, $data)
+    {
+        $info = array(
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => time(), 'tags' => $tags
+        );
+        $data = array_merge($data, $info);
+        return $this->mongo_db->insert($this->detail_table, $data);
+    }
+
+    /**
+     * @param $id
+     * @param $data
+     * @return bool
+     */
+    public function update($id, $data)
+    {
+        $this->mongo_db->where(array('id'=>$id));
+        return $this->mongo_db->update($this->detail_table, $data);
+    }
+
+/*    private function switch_coll($classid)
+    {
+        $class_info = $this->class_model->findOne(array('classid'=>$classid));
+        $this->detail_table = $class_info['name'];
+
+        return $this->detail_table;
+    }*/
+
+}
+
