@@ -18,18 +18,6 @@ class Crontab extends CI_Controller {
 
     public function index()
     {
-        list($usec, $sec) = explode(" ",microtime());
-        echo $usec;
-        echo "<br>---------<br>";
-        echo (float)$usec;
-        echo "<br>---------<br>";
-        echo $sec;
-        echo "<br>---------<br>";
-        echo (float)$sec;
-        echo "<br>---------<br>";
-        $dd = (float)$usec + (float)$sec;
-        echo $dd;
-       return ((float)$usec + (float)$sec);
 
     }
 
