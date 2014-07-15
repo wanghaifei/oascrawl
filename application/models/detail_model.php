@@ -14,6 +14,7 @@ class Detail_model extends CI_Model {
      * tagid: 集合tags 字段_id. 父id
      * url： 所抓取的url。
      * created:  创建时间.
+     * mcreated: 创建时间（毫秒）.
      * tags:  该标签所属标签列表。
      * classid: 分类id，对应index集合（sports, humor, ......................）
      * title: 标题
@@ -45,7 +46,8 @@ class Detail_model extends CI_Model {
      * @param  $total 要查寻排序的条件 [Optional]
      * @return array $mixed
      */
-    public function find($condition=array(), $offset=0, $limit=20, $total = false){
+    public function find($condition=array(), $offset=0, $limit=20, $total = false)
+    {
         if( ! empty($condition) ) {
             $this->mongo_db->where($condition);
         }
@@ -57,6 +59,60 @@ class Detail_model extends CI_Model {
 
         return $this->mongo_db->get($this->detail_table);
     }
+
+    /**
+     *	Get the documents where the value of a $field is less than $previous_cursor
+     *
+     * @param $previous_cursor
+     * @param $limit
+     * @return mixed
+     */
+
+    public function findByLtMs($previous_cursor, $limit)
+    {
+        $this->mongo_db->limit($limit);
+
+        $this->mongo_db->where_lt('mcreated', intval($previous_cursor));
+
+        return $this->mongo_db->get($this->detail_table);
+    }
+
+    /**
+     *	Get the documents where the value of a $field is greater than or equal to $next_cursor
+     *
+     * @param $next_cursor
+     * @param $limit
+     * @return mixed
+     */
+    public function findByGtMs($next_cursor, $limit)
+    {
+        $this->mongo_db->limit($limit);
+        $this->mongo_db->order_by(array('mcreated'));
+
+        $this->mongo_db->where_gt('mcreated', intval($next_cursor));
+
+        return $this->mongo_db->get($this->detail_table);
+    }
+
+    /**
+     * @access public
+     * @param int $offset 查寻时的开始时间 [Optional]
+     * @param int $limit 查寻时的结束时间 [Optional]
+     * @param  $total 要查寻排序的条件 [Optional]
+     * @return array $mixed
+     */
+/*    public function findByTimeRange($start_time, $end_time, $total = false)
+    {
+        $this->mongo_db->where_gte('created', $start_time);
+        $this->mongo_db->where_lt('created', $end_time);
+
+        if($total){
+            return $this->mongo_db->count($this->detail_table);
+        }
+
+        return $this->mongo_db->get($this->detail_table);
+
+    }*/
 
     /**
      * 根据id获取信息
@@ -101,8 +157,12 @@ class Detail_model extends CI_Model {
      */
     public function add($pid, $url, $tags, $data)
     {
+        list($usec, $sec) = explode(" ",microtime());
+
+        $msec = (float)$usec + (float)$sec;
+
         $info = array(
-            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => time(), 'tags' => $tags
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => time(), 'mcreated'=>$msec, 'tags' => $tags
         );
         $data = array_merge($data, $info);
         return $this->mongo_db->insert($this->detail_table, $data);

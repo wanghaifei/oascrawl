@@ -18,10 +18,19 @@ class Crontab extends CI_Controller {
 
     public function index()
     {
-        $url_lists = array(4=>'dd',5=>'cc',6=>'aa',7=>'ff',9=>'aa',10=>'gg');
-        $dd = array_diff_key($url_lists, array_unique($url_lists));
+        list($usec, $sec) = explode(" ",microtime());
+        echo $usec;
+        echo "<br>---------<br>";
+        echo (float)$usec;
+        echo "<br>---------<br>";
+        echo $sec;
+        echo "<br>---------<br>";
+        echo (float)$sec;
+        echo "<br>---------<br>";
+        $dd = (float)$usec + (float)$sec;
+        echo $dd;
+       return ((float)$usec + (float)$sec);
 
-        print_r(array_keys($dd));
     }
 
     public function sync_feeds(){
