@@ -16,12 +16,15 @@ class Detail_model extends CI_Model {
      * created:  创建时间.
      * mcreated: 创建时间（毫秒）.
      * tags:  该标签所属标签列表。
-     * classid: 分类id，对应index集合（sports, humor, ......................）
+     * status : -1 删除, 0 无效, 1 未经审核， 2 审核
      * title: 标题
      * description: 描述,缩率信息
      * content: 主要内容.
      */
     var $detail_fields = array();
+
+    // -1 删除, 0 无效, 1 未经审核， 2 审核
+    var $conf_status = array(-1, 0, 1, 2);
 
     function __construct() {
         parent::__construct();
@@ -162,7 +165,7 @@ class Detail_model extends CI_Model {
         $msec = (float)$usec + (float)$sec;
 
         $info = array(
-            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => time(), 'mcreated'=>$msec, 'tags' => $tags
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => time(), 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0
         );
         $data = array_merge($data, $info);
         return $this->mongo_db->insert($this->detail_table, $data);
@@ -177,6 +180,22 @@ class Detail_model extends CI_Model {
     {
         $this->mongo_db->where(array('id'=>$id));
         return $this->mongo_db->update($this->detail_table, $data);
+    }
+
+    /**
+     * 更新抓取状态
+     * @param $id
+     * @param $status: 0, 1
+     * @return bool
+     */
+    public function updateStatus($id, $status)
+    {
+        if (! in_array($status, $this->conf_status)) {
+            return false;
+        }
+        $this->mongo_db->where(array('_id'=>$id));
+
+        return $this->mongo_db->update($this->detail_table, array('status'=>$status));
     }
 
 /*    private function switch_coll($classid)

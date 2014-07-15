@@ -185,6 +185,8 @@ class Crontab extends CI_Controller {
         $detail = $this->detail_model->findOneByUrl($crawl_info['url']);
 
         $this->detail_model->update($detail['_id'], $insert_data);
+
+        $this->detail_model->updateStatus($detail['_id'], 1);
     }
 
     /**
