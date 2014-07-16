@@ -38,7 +38,7 @@ class Api extends CI_Controller {
 
         $this->detail_model->setTableName($coll);
 
-        $results = $this->detail_model->findByGtMs($next_cursor, $limit);
+        $results = $this->detail_model->findByGtMs($next_cursor, $status = 1,  $limit);
 
         $this->response($results, $limit);
     }
@@ -55,7 +55,7 @@ class Api extends CI_Controller {
 
         $this->detail_model->setTableName($coll);
 
-        $results = $this->detail_model->findByLtMs($previous_cursor, $limit);
+        $results = $this->detail_model->findByLtMs($previous_cursor, $status = 1, $limit);
 
         $this->response($results, $limit);
     }
