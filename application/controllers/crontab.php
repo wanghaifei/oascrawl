@@ -42,25 +42,27 @@ class Crontab extends CI_Controller {
      */
     public function crawl_tags()
     {
-        $queue_info = $this->queue_model->get_queue(self::Q_FEED);
-
-        if ($queue_info) {
-            $tag_lists = $this->htmlparser->start($queue_info['url'], 1);
-
-            foreach ($tag_lists as $info) {
-                if($this->relation_model->findOneByUrl($info['url'])) {
-                    continue;
-                }
-                //合并标签
-                if ($queue_info['tags'] && ! in_array($info['tag'], $queue_info['tags'])) {
-                    $tags = array_merge(array($info['tag']), $queue_info['tags']);
-                }else{
-                    $tags = array($info['tag']);
-                }
-                $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid']);
-            }
+        while (true) {
+            $queue_info = $this->queue_model->get_queue(self::Q_FEED);
+            if(empty($queue_info)){ sleep(10); continue; }
+            else break;
         }
-        sleep(1);
+
+        $tag_lists = $this->htmlparser->start($queue_info['url'], 1);
+
+        foreach ($tag_lists as $info) {
+            if($this->relation_model->findOneByUrl($info['url'])) {
+                continue;
+            }
+            //合并标签
+            if ($queue_info['tags'] && ! in_array($info['tag'], $queue_info['tags'])) {
+                $tags = array_merge(array($info['tag']), $queue_info['tags']);
+            }else{
+                $tags = array($info['tag']);
+            }
+            $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid']);
+        }
+
     }
 
     /**
