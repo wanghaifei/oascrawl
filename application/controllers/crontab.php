@@ -178,9 +178,9 @@ class Crontab extends CI_Controller {
 
         if(!empty($detail_info['title'])) $insert_data['title'] = $detail_info['title'];
 
-        $this->load->model('detail_model');
-
         $class_info = $this->class_model->findOne(array('classid'=>$crawl_info['classid']));
+
+        $this->load->model('detail_model');
 
         $this->detail_model->setTableName($class_info['name']);
 
