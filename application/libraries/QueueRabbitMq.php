@@ -9,6 +9,7 @@
  * @author wanghaifei <wanghaifei@soften.cn>
  *
  */
+
 class QueueRabbitMq {
 
 	/**
