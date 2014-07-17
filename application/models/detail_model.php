@@ -179,7 +179,7 @@ class Detail_model extends CI_Model {
      */
     public function update($id, $data)
     {
-        $this->mongo_db->where(array('id'=>$id));
+        $this->mongo_db->where(array('_id'=>$id));
         return $this->mongo_db->update($this->detail_table, $data);
     }
 
