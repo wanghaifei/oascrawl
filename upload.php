@@ -43,7 +43,7 @@ class Files_Tool {
 
         //图片不存在,读取图片
         if(! file_exists($filename)){
-            $img = send_http($this->url);
+            $img = file_get_contents($this->url);
             $fp = @ fopen($filename, 'a');
             fwrite($fp, $img);
             fclose($fp);
