@@ -182,7 +182,7 @@ class Crontab extends CI_Controller {
 
         $class_info = $this->class_model->findOne(array('classid'=>$crawl_info['classid']));
 
-        $this->detail_table->setTableName($class_info['name']);
+        $this->detail_model->setTableName($class_info['name']);
 
         $detail = $this->detail_model->findOneByUrl($crawl_info['url']);
 
