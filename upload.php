@@ -41,7 +41,7 @@ class Files_Tool {
 
         //图片不存在,读取图片
         if(! file_exists($filename)){
-            $img = file_put_contents($this->url);
+            $img = send_http($this->url);
 			file_put_contents($filename, $img);
         }
         $size = getimagesize($filename);

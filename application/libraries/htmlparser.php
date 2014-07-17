@@ -370,7 +370,7 @@ class htmlparser {
         }
         //下载图片计算高宽
         if ($currentScore === 0) {
-            if(preg_match('<img src="(.*?)"', $html, $img_src)){
+            if(preg_match('|<img src="(.*?)"|ims', $html, $img_src)){
                 $currentScore += $this->pic_width($this->add_host($img_src[1]));
             }
         }
@@ -432,7 +432,6 @@ class htmlparser {
     private function pic_width($pic_url)
     {
         $pic_url = urlencode($pic_url);
-
         $pic_width = send_http(UPLOADFILE . '?url='. $pic_url);
 
         return $pic_width;
