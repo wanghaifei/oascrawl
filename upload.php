@@ -39,14 +39,12 @@ class Files_Tool {
         //文件名
         $name=$this->set_Name();
         //文件位置
-        $filename=$dir.$name.$ext;
+        $filename=$dir.basename($this->url);
 
         //图片不存在,读取图片
         if(! file_exists($filename)){
-            $img = file_get_contents($this->url);
-            $fp = @ fopen($filename, 'a');
-            fwrite($fp, $img);
-            fclose($fp);
+            $img = send_http($this->url);
+			file_put_contents($filename, $img);
         }
         $size = getimagesize($filename);
         $pic_width = $size[0];
@@ -58,19 +56,12 @@ class Files_Tool {
     }
     //以日期生成路径
     protected function url_Dir(){
-        $dir= FILEPATH . implode('/', str_split(md5($this->url), 8));
+        $dir= FILEPATH . implode('/', str_split(md5($this->url), 8)) . '/';
         if(!is_dir($dir)){
             mkdir($dir,0777,true);
         }
         return $dir;
     }
-    //生成随机文件名
-    protected function set_Name(){
-        //$url_info = explode('/', $this->url);
-//        return $url_info[count($url_info)-1];
-        return basename($this->url);
-    }
-
     //错误接口
     public static function errors($errors){
 
