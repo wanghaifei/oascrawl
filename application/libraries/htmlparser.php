@@ -6,7 +6,7 @@
  * Time: 下午3:46
  */
 
-define('UPLOADFILE', 'http://crawl.oas.com/upload.php');
+define('UPLOADFILE', 'http://127.0.0.1/upload.php');
 
 require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
 
