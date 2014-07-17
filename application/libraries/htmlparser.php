@@ -110,7 +110,7 @@ class htmlparser {
 
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
-       $this->test($score_lists);
+       //$this->test($score_lists);
         $info_lists = array();
         foreach($score_lists as $score_info){
             if ($valid_info = $this->get_valid_info($score_info['obj'])) {
