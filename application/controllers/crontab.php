@@ -245,7 +245,7 @@ class Crontab extends CI_Controller {
     public function test_crawl()
     {
 //        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresimleri/araclar/', 2);
-        $relation_lists = $this->htmlparser->start('http://www.bobiler.org/', 2, 1);
+        $relation_lists = $this->htmlparser->start('http://www.komikler.com/komikresim/spor_resimleri/11:120400/Her_Turlu_Gol_Kurtarilir', 3);
 
         $turn_page_url = $this->htmlparser->turn_page_url();
         print_r($relation_lists);

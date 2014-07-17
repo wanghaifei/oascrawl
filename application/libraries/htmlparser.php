@@ -90,7 +90,6 @@ class htmlparser {
     public function start($url, $type = 1, $pic = true)
     {
         $this->_init($url);
-
         if (! in_array($type, $this->conf_html_type)) {
             error_log('error', 'type is error');
             return false;
@@ -105,16 +104,16 @@ class htmlparser {
         foreach ($dom_lists as $dom) {
             $this->calculate_dom_score($dom);
         }
+
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
-        //$this->test($score_lists);
+//       $this->test($score_lists);
         $info_lists = array();
         foreach($score_lists as $score_info){
             if ($valid_info = $this->get_valid_info($score_info['obj'])) {
                 $info_lists[] = convert_encoding($this->html_charset, $this->charset, $valid_info);
             }
         }
-
         if ($data = $this->get_valid_lists($info_lists, $pic)) {
             return $data;
         }
@@ -140,7 +139,9 @@ class htmlparser {
     private function calculate_dom_score($dom)
     {
         //标签内无内容，则忽略
-        if(strlen(trim(strip_tags(pq($dom)->html(), 'img'))) === 0 ) return false;
+        if(strlen(trim(strip_tags(pq($dom)->html(), '<img>'))) === 0 ){
+            return false;
+        }
 
         $dom_children = pq($dom)->children();
         //如果没有子标签，则不计算分数
@@ -181,7 +182,7 @@ class htmlparser {
             //如果存在<iframe，则忽略
             if(strstr($html, '<iframe ')) continue;
             //过滤无效标签
-            if(! strip_tags($html, 'img')) continue;
+            if(! strip_tags($html, '<img>')) continue;
             //去除所有的text
             $html = preg_replace('/(?<=[>])[^<>]+?(?=[<])/is', '', $html);
             $html = preg_replace('|<a .*?>|ims', '<a>', $html);
@@ -250,7 +251,7 @@ class htmlparser {
 
         //统计标签内的子标签有效标签数
         $all_tag_count = 0;
-        if (preg_match_all('|<\w{1,5} [^<>/]*?>|ims', $html, $out)) {
+        if (preg_match_all('|<\w{1,7} [^<>]*?>|ims', $html, $out)) {
             $all_tag_count = count($out[0]);
         }
         switch($this->html_type){
@@ -298,11 +299,11 @@ class htmlparser {
         //文字带有url的,字符越长减分越大
         if (preg_match_all('|<a href=.*?>(.*?)</a>|ims', $currentHtml, $out)) {
             foreach($out[1] as $content){
-                $currentScore -= mb_strlen(str_replace(' ', '', $content), $this->html_charset) * 200;
+                $currentScore -= mb_strlen(str_replace(' ', '', str_replace(' ', '', strip_tags($content))), $this->html_charset) * 10;
             }
         }
         //统计文字长度
-        $replace = preg_replace('|<a .*?>.*?</a>|', '', $currentHtml);
+        $replace = preg_replace('|<a .*?</a>|ims', '', $currentHtml);
         $replace = str_replace(' ', '', $replace);
 
         $currentScore += mb_strlen($replace, $this->html_charset);
@@ -310,6 +311,32 @@ class htmlparser {
         return $currentScore;
     }
 
+    private function pic_info($dom)
+    {
+        $currentScore = 0;
+        $html = pq($dom)->html();
+
+/*        if(preg_match('|^\<img (.*?)>|ims', trim($html), $pic_info)){
+            foreach ($preg_lists as $preg_info) {
+                if (preg_match('|' . $preg_info . '|ims', $pic_info[1], $score)) {
+                    $currentScore += trim($score[1]);
+                    return $currentScore;
+                }
+            }
+            //匹配父a标签的高宽
+            $parent = trim(pq($dom)->parent()->find('a'));
+
+            if(preg_match('|^\<a (.*?)>|ims', $parent, $a_attr)){
+                foreach ($preg_lists as $preg_info) {
+                    if (preg_match('|' . $preg_info . '|ims', $a_attr[1], $score)) {
+                        $currentScore += trim($score[1]);
+                        break;
+                    }
+                }
+            }
+        }*/
+
+    }
     /**
      * 图片分数
      * @param $html
@@ -319,16 +346,31 @@ class htmlparser {
     {
         $currentScore = 0;
         $html = pq($dom)->html();
+        //没图片则不计算分数
+        if(! strstr($html, '<img ')) return $currentScore;
 
-        //父标签是a,并且有href则不计算分值.
-        if(preg_match('|^\<img .*?|ims', trim($html), $out)){
-            $parent = pq($dom)->parent()->find('a');
-            if($parent = trim($parent)){
-                if(preg_match('|^\<a [^<>]*?href="(.*?)"|ims', $parent, $out)){
-                    return $currentScore;
+        $preg_lable = array('<img (.*?)>' , '<a ([^<]*?<img src=".*?".*?)</a>');
+        $preg_lists = array('width="(.+?)"', 'width:(.+?)px', 'height="(.+?)"', 'height:(.+?)px');
+
+        $img_html = strip_tags($html, '<img><a>');
+
+        foreach ($preg_lable as $lable_info) {
+            if (preg_match('|' . $lable_info . '|ims', $img_html, $pic_info)) {
+                foreach ($preg_lists as $preg_info) {
+                    if (preg_match('|' . $preg_info . '|ims', $pic_info[1], $score)) {
+                        $currentScore += intval(trim($score[1]));
+                        break 2;
+                    }
                 }
             }
         }
+        return $currentScore;
+    }
+
+    private function bak()
+    {
+
+/*        //如果图片有链接
         $all_pic_src = $pic_with_href = array();
         $img_html = strip_tags($html, '<img><a>');
 
@@ -350,7 +392,8 @@ class htmlparser {
                 $currentScore += $this->pic_width($src);
             }
         }
-        return $currentScore;
+        return $currentScore;*/
+
     }
 
     /**
@@ -558,7 +601,7 @@ class htmlparser {
 
                     $html = trim(pq($dom_children)->eq($k));
 
-                    $replace = str_replace(' ', '', strip_tags($html, 'img'));
+                    $replace = str_replace(' ', '', strip_tags($html, '<img>'));
 
                     if(empty($replace) || strstr($html, '<iframe ') || strpos($html, '<a ') === 0){
                         continue;
@@ -599,11 +642,15 @@ class htmlparser {
 
             case 3 :
                 $html = pq($dom)->html();
+
+                $ret_info = array('content'=>$html);
+
                 if (preg_match('|<h[1-2]>(.*?)</h[1-2]>|ims', $html, $out)) {
-                    $title = $out[1][0];
+                    $title = $out[1];
                     $html = preg_replace('|<h[1-2]>(.*?)</h[1-2]>|ims', '', $html);
+
+                    $ret_info = array('title'=>$title, 'content'=>$html);
                 }
-                $ret_info = array('title'=>$title, 'content'=>$html);
                 return $ret_info;
         }
     }
