@@ -35,3 +35,6 @@ Icon
 .Spotlight-V100
 .Trashes
 /application/config/database.php
+/application/config/rabbitmq.php
+/application/config/mongodb.php
+/application/config/redis.php

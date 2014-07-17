@@ -5,6 +5,9 @@
  * Date: 14-6-18
  * Time: 下午3:46
  */
+
+define('UPLOADFILE', 'http://crawl.oas.com/upload.php');
+
 require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
 
 class htmlparser {
@@ -107,7 +110,7 @@ class htmlparser {
 
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
-//       $this->test($score_lists);
+       $this->test($score_lists);
         $info_lists = array();
         foreach($score_lists as $score_info){
             if ($valid_info = $this->get_valid_info($score_info['obj'])) {
@@ -349,6 +352,7 @@ class htmlparser {
         //没图片则不计算分数
         if(! strstr($html, '<img ')) return $currentScore;
 
+        //图片或标签a 有高宽属性
         $preg_lable = array('<img (.*?)>' , '<a ([^<]*?<img src=".*?".*?)</a>');
         $preg_lists = array('width="(.+?)"', 'width:(.+?)px', 'height="(.+?)"', 'height:(.+?)px');
 
@@ -364,12 +368,18 @@ class htmlparser {
                 }
             }
         }
+        //下载图片计算高宽
+        if ($currentScore === 0) {
+            if(preg_match('<img src="(.*?)"', $html, $img_src)){
+                $currentScore += $this->pic_width($this->add_host($img_src[1]));
+            }
+        }
+
         return $currentScore;
     }
 
     private function bak()
     {
-
 /*        //如果图片有链接
         $all_pic_src = $pic_with_href = array();
         $img_html = strip_tags($html, '<img><a>');
@@ -421,20 +431,9 @@ class htmlparser {
      */
     private function pic_width($pic_url)
     {
-        $filepath = '/tmp';
-        //判断路经是否存在
-        !is_dir($filepath) ? mkdir($filepath) : null;
-        $filename = $filepath.'/'.basename($pic_url);
+        $pic_url = urlencode($pic_url);
 
-        //图片不存在,读取图片
-        if(! file_exists($filename)){
-            $img = file_get_contents($pic_url);
-            $fp = @ fopen($filename, 'a');
-            fwrite($fp, $img);
-            fclose($fp);
-        }
-        $size = getimagesize($filename);
-        $pic_width = $size[0];
+        $pic_width = send_http(UPLOADFILE . '?url='. $pic_url);
 
         return $pic_width;
     }
