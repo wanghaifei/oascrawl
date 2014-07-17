@@ -36,14 +36,12 @@ class Files_Tool {
         }
         //路径
         $dir=$this->url_Dir();
-        //文件名
-        $name=$this->set_Name();
         //文件位置
         $filename=$dir.basename($this->url);
 
         //图片不存在,读取图片
         if(! file_exists($filename)){
-            $img = send_http($this->url);
+            $img = file_put_contents($this->url);
 			file_put_contents($filename, $img);
         }
         $size = getimagesize($filename);
