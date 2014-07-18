@@ -226,14 +226,25 @@ class Crontab extends CI_Controller {
     /**
      * 清空缓存
      */
-    public function setemptycache()
+    public function emptycache()
     {
         if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
             foreach ($unlock_lists as $crawl_info) {
-                //$crawl_url_lists = $this->redis_model->set_redis_cache('url_relation', $crawl_info['url'], array());
+                $this->redis_model->set_redis_cache('url_relation', $crawl_info['url'], array());
+            }
+        }
+    }
+
+    /**
+     * 缓存状态
+     */
+    public function stat_cache()
+    {
+        if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
+            foreach ($unlock_lists as $crawl_info) {
                 $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
                 print_r($crawl_url_lists);
-                echo "<br>----------------------------<br>";
+                echo "<br><br>----------------------------<br><br>";
             }
         }
     }

@@ -61,7 +61,7 @@ class htmlparser {
     {
         $this->_ci = get_instance();
         $this->_ci->load->helper('global');
-        $this->_ci->load->library('fetchurl');
+//        $this->_ci->load->library('fetchurl');
     }
 
     private function _init($url){
@@ -70,8 +70,8 @@ class htmlparser {
         if ($url_info = parse_url($url)) {
             $this->host = $url_info['scheme'].'://'.$url_info['host'];
         }
-        $this->html = $this->_ci->fetchurl->fetch(htmlspecialchars_decode($url), 3, 10);
-
+//        $this->html = $this->_ci->fetchurl->fetch(htmlspecialchars_decode($url), 3, 10);
+        $this->html = send_http(htmlspecialchars_decode($url));
         if(empty($this->html)){ die('html is empty!'); }
 
         preg_match('|charset=(.*?)"|ims', $this->html, $charset);
@@ -474,7 +474,7 @@ class htmlparser {
         //css文件中的css
         if (preg_match_all('|'.$css_file_rule.'|ims', $this->html, $out)) {
             foreach ($out[1] as $css_url) {
-                $css_content[] = $this->_ci->fetchurl->fetch(htmlspecialchars_decode($this->add_host($css_url)), 3, 10);
+                $css_content[] = send_http(htmlspecialchars_decode($this->add_host($css_url)));
             }
         }
         //获取有效dom
