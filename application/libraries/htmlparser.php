@@ -527,7 +527,7 @@ class htmlparser {
         }
 
         if (empty($valid_url) || in_array($this->crawl_url, $valid_url)) {
-
+            $valid_url = array();
             $url_lists = array();
             foreach ($this->score as $score_info) {
                 $html = $score_info['obj']->html();
@@ -548,13 +548,14 @@ class htmlparser {
                         continue;
                     }
                     $urls = $out[1];
-                    if(count($urls) > 1 || ! is_numeric(strip_tags($out[2][0]))) continue;
+                    if(count($urls) > 1 || ! ctype_digit(strip_tags($out[2][0]))) continue;
 
                     $pages[] = $this->add_host($urls[0]);
                 }
 
                 if(!empty($pages)) $url_lists[] = $pages;
             }
+
             foreach((array)$url_lists as $pages){
                 if(count($pages) > count($valid_url)) $valid_url = $pages;
             }

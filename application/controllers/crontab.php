@@ -259,11 +259,11 @@ class Crontab extends CI_Controller {
 
     public function test_crawl()
     {
-//        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresimleri/araclar/', 2);
-        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresim/tabela/652/saglikli-kurban-kesimi-yapilir/', 3);
+        $relation_lists = $this->htmlparser->start('http://www.komikler.com/komikresim/kategori.php?catid=40', 2, 1);
+//        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresim/tabela/652/saglikli-kurban-kesimi-yapilir/', 3);
 
         $turn_page_url = $this->htmlparser->turn_page_url();
-        print_r($relation_lists);
+        print_r($turn_page_url);
 
     }
 }
