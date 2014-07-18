@@ -76,7 +76,7 @@ class Detail_model extends CI_Model {
         $this->mongo_db->limit($limit);
         $this->mongo_db->order_by(array('mcreated'));
         $this->mongo_db->where(array('status'=>$status));
-        $this->mongo_db->where_lt('mcreated', intval($previous_cursor));
+        $this->mongo_db->where_lt('mcreated', $previous_cursor);
 
         return $this->mongo_db->get($this->detail_table);
     }
@@ -93,7 +93,7 @@ class Detail_model extends CI_Model {
         $this->mongo_db->limit($limit);
         $this->mongo_db->order_by(array('mcreated'));
         $this->mongo_db->where(array('status'=>$status));
-        $this->mongo_db->where_gt('mcreated', intval($next_cursor));
+        $this->mongo_db->where_gt('mcreated', $next_cursor);
 
         return $this->mongo_db->get($this->detail_table);
     }
