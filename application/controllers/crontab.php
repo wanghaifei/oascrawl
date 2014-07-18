@@ -70,25 +70,28 @@ class Crontab extends CI_Controller {
      */
     public function  sync_relation()
     {
-        if ($tagurls = $this->relation_model->nextCrawl()) {
-            foreach ($tagurls as $info) {
-
-                $crawl_url_lists = array();
-                //更改抓取时间为现在
-                $this->relation_model->update_lasttime($info['_id']);
-                //更改抓取状态为正在抓取
-                $this->relation_model->update_status($info['_id'], 1);
-
-                $info['cachekey'] = $info['url'];
-
-                $this->queue_model->add_queue(self::Q_RELATION, $info);
-
-                $crawl_url_lists[$info['url']] = 0;
-
-                $this->redis_model->set_redis_cache('url_relation', $info['cachekey'], $crawl_url_lists);
-            }
+        while (true) {
+            $tagurls = $this->relation_model->nextCrawl();
+            if(empty($tagurls)){ sleep(5); continue; }
+            else break;
         }
-        sleep(5);
+
+        foreach ($tagurls as $info) {
+
+            $crawl_url_lists = array();
+            //更改抓取时间为现在
+            $this->relation_model->update_lasttime($info['_id']);
+            //更改抓取状态为正在抓取
+            $this->relation_model->update_status($info['_id'], 1);
+
+            $info['cachekey'] = $info['url'];
+
+            $this->queue_model->add_queue(self::Q_RELATION, $info);
+
+            $crawl_url_lists[$info['url']] = 0;
+
+            $this->redis_model->set_redis_cache('url_relation', $info['cachekey'], $crawl_url_lists);
+        }
     }
 
     /**
@@ -196,24 +199,26 @@ class Crontab extends CI_Controller {
      */
     public function unlock()
     {
-        if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
+        while (true) {
+            $unlock_lists = $this->relation_model->find(array('status' => 1));
+            if(empty($unlock_lists)){ sleep(5); continue; }
+            else break;
+        }
+        foreach ($unlock_lists as $crawl_info) {
+            $unlock = true;
+            $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
+            if(empty($crawl_url_lists)) continue;
 
-            foreach ($unlock_lists as $crawl_info) {
-                $unlock = true;
-                $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
-                if(empty($crawl_url_lists)) continue;
-
-                foreach ($crawl_url_lists as $url => $status) {
-                    if ($status === 0) {
-                        $unlock = false;
-                        break;
-                    }
+            foreach ($crawl_url_lists as $url => $status) {
+                if ($status === 0) {
+                    $unlock = false;
+                    break;
                 }
-                if ($unlock) {
-                    $info = $this->relation_model->findOneByUrl($crawl_info['url']);
-                    $this->relation_model->update_nexttime($info['_id']);
-                    $this->relation_model->update_status($info['_id'], 0);
-                }
+            }
+            if ($unlock) {
+                $info = $this->relation_model->findOneByUrl($crawl_info['url']);
+                $this->relation_model->update_nexttime($info['_id']);
+                $this->relation_model->update_status($info['_id'], 0);
             }
         }
     }
