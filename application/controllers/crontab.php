@@ -88,7 +88,7 @@ class Crontab extends CI_Controller {
                 $this->redis_model->set_redis_cache('url_relation', $info['cachekey'], $crawl_url_lists);
             }
         }
-        sleep(1);
+        sleep(5);
     }
 
     /**
@@ -200,20 +200,17 @@ class Crontab extends CI_Controller {
 
             foreach ($unlock_lists as $crawl_info) {
                 $unlock = true;
-
                 $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
-                print_r($crawl_url_lists);exit;
-
                 if(empty($crawl_url_lists)) continue;
 
-/*                foreach ($crawl_url_lists as $url => $status) {
+                foreach ($crawl_url_lists as $url => $status) {
                     if ($status === 0) {
                         $unlock = false;
                         break;
                     }
-                }*/
+                }
                 if ($unlock) {
-                    $info = $this->relation_model->findOneByUrl($crawl_url_lists['url']);
+                    $info = $this->relation_model->findOneByUrl($crawl_info['url']);
                     $this->relation_model->update_nexttime($info['_id']);
                     $this->relation_model->update_status($info['_id'], 0);
                 }
