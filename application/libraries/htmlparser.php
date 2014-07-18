@@ -49,7 +49,7 @@ class htmlparser {
      */
     private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<!--.*?-->');
 
-    private $filter_title = array('502 Bad Gateway', 'NOT FOUND');
+    private $filter_title = array('502 Bad Gateway', 'NOT FOUND', 'Not Found');
 
     private $html;
     private $crawl_url;
