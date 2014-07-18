@@ -524,10 +524,11 @@ class htmlparser {
                 if(count($param_intersect) != count($crawl_param_arr)) continue;
                 $valid_url[] = $url;
             }
+        }
 
-        }else{
+        if (empty($valid_url) || in_array($this->crawl_url, $valid_url)) {
+
             $url_lists = array();
-//            $this->test($this->score);
             foreach ($this->score as $score_info) {
                 $html = $score_info['obj']->html();
                 $replace = str_replace(' ', '', strip_tags($html));
@@ -558,6 +559,7 @@ class htmlparser {
                 if(count($pages) > count($valid_url)) $valid_url = $pages;
             }
         }
+
         return $valid_url;
     }
 

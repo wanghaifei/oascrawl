@@ -105,24 +105,24 @@ class Crontab extends CI_Controller {
             if(empty($crawl_info)){ sleep(2); continue; }
             else break;
         }
-        $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic']);
-
-        $url_pages = $this->htmlparser->turn_page_url();
-
         $classid = $crawl_info['classid'];
 
         $cachekey = $crawl_info['cachekey'];
+
+        $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $cachekey);
+
+        $crawl_url_lists[$crawl_info['url']] = 1;
+
+        $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
+
+        $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic']);
+
+        $url_pages = $this->htmlparser->turn_page_url();
 
         $class_info = $this->class_model->findOne(array('classid'=>$classid));
 
         $this->load->model('detail_model');
         $this->detail_model->setTableName($class_info['name']);
-
-        //array('http://www.999gag.com/search?q=disney&pn=0&p=tag'=>1, 'http://www.999gag.com/search?q=disney&pn=1&p=tag'=>0);
-        $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $cachekey);
-
-        $crawl_url_lists[$crawl_info['url']] = 1;
-        $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
 
         //不存在该记录则存储
         $insert_count = 0;
