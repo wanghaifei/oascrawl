@@ -91,9 +91,9 @@ class Detail_model extends CI_Model {
     public function findByGtMs($next_cursor, $status = 1, $limit = 20)
     {
         $this->mongo_db->limit($limit);
-        $this->mongo_db->order_by(array('mcreated'));
         $this->mongo_db->where(array('status'=>$status));
-        $this->mongo_db->where_gt('mcreated', $next_cursor);
+        $this->mongo_db->order_by(array('mcreated'=>1));
+        $this->mongo_db->where_gt('mcreated', floatval($next_cursor));
 
         return $this->mongo_db->get($this->detail_table);
     }

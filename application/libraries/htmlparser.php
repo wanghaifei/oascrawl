@@ -49,6 +49,8 @@ class htmlparser {
      */
     private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<!--.*?-->');
 
+    private $filter_title = array('502 Bad Gateway', 'NOT FOUND');
+
     private $html;
     private $crawl_url;
 
@@ -658,6 +660,10 @@ class htmlparser {
         //有图片则计算图片, 图片最多的为有效的
         $count = array();
         switch($this->html_type){
+
+            case 1 :
+                return $lists[0];
+
             case 2 :
                 if(! $pic) return $lists[0];
 
@@ -671,11 +677,12 @@ class htmlparser {
                 $pos = array_search(max($count), $count);
                 return $lists[$pos];
 
-                break;
-
-            default :
-                return $lists[0];
-                break;
+            case 3:
+               if(in_array($lists[0]['title'], $this->filter_title)){
+                   return false;
+               }else{
+                   return $lists[0];
+               }
         }
     }
 
