@@ -228,7 +228,7 @@ class Crontab extends CI_Controller {
      */
     public function emptycache()
     {
-        if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
+        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
             foreach ($unlock_lists as $crawl_info) {
                 $this->redis_model->set_redis_cache('url_relation', $crawl_info['url'], array());
             }
@@ -240,7 +240,7 @@ class Crontab extends CI_Controller {
      */
     public function stat_cache()
     {
-        if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
+        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
             foreach ($unlock_lists as $crawl_info) {
                 $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
                 echo $crawl_info['url'];
@@ -259,7 +259,7 @@ class Crontab extends CI_Controller {
 
     public function test_crawl()
     {
-        $relation_lists = $this->htmlparser->start('http://www.komikler.com/komikresim/kategori.php?catid=40', 2, 1);
+        $relation_lists = $this->htmlparser->start('http://www.komikler.com/komikresim/kategori.php?catid=27', 2, 1);
 //        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresim/tabela/652/saglikli-kurban-kesimi-yapilir/', 3);
 
         $turn_page_url = $this->htmlparser->turn_page_url();
