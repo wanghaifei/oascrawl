@@ -243,8 +243,10 @@ class Crontab extends CI_Controller {
         if ($unlock_lists = $this->relation_model->find(array('status' => 1))) {
             foreach ($unlock_lists as $crawl_info) {
                 $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
+                echo $crawl_info['url'];
+                echo "<br>--------------------------------------<br>";
                 print_r($crawl_url_lists);
-                echo "<br><br>----------------------------<br><br>";
+                echo "<br><br>-------------------------------------------------------------------------------------------------------------<br><br>";
             }
         }
     }
