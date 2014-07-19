@@ -5,12 +5,12 @@
  * Date: 14-7-16
  * Time: 下午7:28
  */
-define('FILEPATH' , '/home/file/');
+define('FILEPATH' , '/data/htdocs/wordpress/');
 
 class Files_Tool {
     public static $path = array();
     public static $wrong = array();
-    protected static$allowExt=array('.jpg','.jpeg','.png','.gif','.bmp','.svg','.chm','.pdf','.zip','.rar','.tar','.gz','.bzip2','.ppt','.doc');
+    protected static $allowExt=array('.jpg','.jpeg','.png','.gif','.bmp','.svg','.chm','.pdf','.zip','.rar','.tar','.gz','.bzip2','.ppt','.doc');
     protected static $error=array(
         0=>'文件上传失败,没有错误发生,文件上传成功',
         1=>'文件上传失败,上传的文件超过了 php.ini中upload_max_filesize 选项限制的值',
@@ -35,18 +35,26 @@ class Files_Tool {
             self::errors(self::$error[5]);
         }
         //路径
-        $dir=$this->url_Dir();
-        //文件位置
-        $filename=$dir.basename($this->url);
+        $rel_path = 'imgdb/'. implode('/', str_split(md5($this->url), 8)) . '/';
+
+        $dir= FILEPATH . $rel_path;
+        if(!is_dir($dir)){
+            mkdir($dir,0777,true);
+        }
+        //文件名
+        $filename=basename($this->url);
 
         //图片不存在,读取图片
-        if(! file_exists($filename)){
+        if(! file_exists($dir.$filename)){
             $img = send_http($this->url);
-			file_put_contents($filename, $img);
+			file_put_contents($dir.$filename, $img);
         }
-        $size = getimagesize($filename);
-        $pic_width = $size[0];
-        return $pic_width;
+
+        $pic_info = getimagesize($dir.$filename);
+        $url = 'http://'. $_SERVER["HTTP_HOST"] .'/' . $rel_path . $filename;
+        $ret_info = array('width'=>$pic_info[0], 'height'=>$pic_info[1], 'type'=>$pic_info[2], 'url'=>$url);
+
+        return json_encode($ret_info);
     }
     //获取后缀的方法
     protected function get_Ext(){

@@ -6,7 +6,7 @@
  * Time: 下午3:46
  */
 
-define('UPLOADFILE', 'http://127.0.0.1/upload.php');
+define('UPLOADFILE', 'http://www.komiksurat.com/upload.php');
 
 require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
 
@@ -373,7 +373,8 @@ class htmlparser {
         //下载图片计算高宽
         if ($currentScore === 0) {
             if(preg_match('|<img src="(.*?)"|ims', $html, $img_src)){
-                $currentScore += $this->pic_width($this->add_host($img_src[1]));
+                $pic_info = $this->pic_upload($this->add_host($img_src[1]));
+                if(!empty($pic_info['width'])) $currentScore += $pic_info['width'];
             }
         }
 
@@ -431,12 +432,11 @@ class htmlparser {
      * @param $pic_url
      * @return mixed
      */
-    private function pic_width($pic_url)
+    private function pic_upload($pic_url)
     {
         $pic_url = urlencode($pic_url);
-        $pic_width = send_http(UPLOADFILE . '?url='. $pic_url);
-
-        return $pic_width;
+        $pic_info= send_http(UPLOADFILE . '?url='. $pic_url);
+        return json_decode($pic_info, true);
     }
 
     /**
@@ -635,7 +635,7 @@ class htmlparser {
                         }
                     }
                     $html = substr($html, 0);
-                    $ret_info[] = array('url'=>htmlspecialchars_decode($url), 'title'=>$title, 'description'=>$html);
+                    @$ret_info[] = array('url'=>htmlspecialchars_decode($url), 'title'=>$title, 'description'=>$html);
                 }
 
                 //if(count($dom_children) < 8 && !$is_long) return false;
@@ -661,32 +661,69 @@ class htmlparser {
     private function get_valid_lists($lists, $pic)
     {
         //有图片则计算图片, 图片最多的为有效的
-        $count = array();
+        $count = $data = array();
+        $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
+
         switch($this->html_type){
 
             case 1 :
-                return $lists[0];
+                $data = $lists[0];
+                break;
 
             case 2 :
-                if(! $pic) return $lists[0];
-
-                foreach($lists as $key_1=>$info){
-                    $pic_count = 0;
-                    foreach ($info as $key_2 => $val) {
-                        if(strstr($val['description'], '<img ')) $pic_count++;
+                $data = $lists[0];
+                //获取列表内图片最多的元素
+                if ($pic) {
+                    foreach($lists as $key_1=>$info)
+                    {
+                        $pic_count = 0;
+                        foreach ($info as $val) {
+                            if(strstr($val['description'], '<img ')) $pic_count++;
+                        }
+                        $count[$key_1] = $pic_count;
                     }
-                    $count[$key_1] = $pic_count;
+                    $pos = array_search(max($count), $count);
+                    $data = $lists[$pos];
                 }
-                $pos = array_search(max($count), $count);
-                return $lists[$pos];
+                foreach ($data as $key => $info) {
+                    //删除a标签
+                    $data[$key]['description'] = str_replace('</a>', '', $data[$key]['description']);
+                    $data[$key]['description'] = preg_replace('|<a [^<]*?>|ims', '',$data[$key]['description']);
+                    //保存图片，并替换图片地址
+                    if(preg_match_all('|<img src="(.*?)"|ims', $info['description'], $img_src)){
+                        foreach ($img_src[1] as $src_info) {
+                            $ext = substr(strrchr($src_info, '.'), 0);
+                            if(in_array($ext , $allowExt)){
+                                $pic_info = $this->pic_upload($this->add_host($src_info));
+                                if(!empty($pic_info['url'])) $data[$key]['description'] = str_replace($src_info, $pic_info['url'], $data[$key]['description']);
+                            }
+                        }
+                    }
+                }
+                break;
 
             case 3:
                if(in_array($lists[0]['title'], $this->filter_title)){
                    return false;
                }else{
-                   return $lists[0];
+                   $data = $lists[0];
+                   //删除a标签
+                   $data['content'] = str_replace('</a>', '', $data['content']);
+                   $data['content'] = preg_replace('|<a [^<]*?>|ims', '',$data['content']);
+                   //保存图片，并替换图片地址
+                   if(preg_match_all('|<img src="(.*?)"|ims', $data['content'], $img_src)){
+                       foreach ($img_src[1] as $src_info) {
+                           $ext = substr(strrchr($src_info, '.'), 0);
+                           if(in_array($ext , $allowExt)){
+                               $pic_info = $this->pic_upload($this->add_host($src_info));
+                               if(!empty($pic_info['url'])) $data['content'] = str_replace($src_info, $pic_info['url'], $data['content']);
+                           }
+                       }
+                   }
                }
+               break;
         }
+        return $data;
     }
 
     private function add_host($url)
