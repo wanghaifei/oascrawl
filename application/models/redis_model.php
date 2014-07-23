@@ -61,4 +61,18 @@ class Redis_Model extends CI_Model {
 		
 		return true;
 	}
+
+    /**
+     * 删除缓存信息
+     * @param $name 缓存的名称
+     * @param $key	缓存的key
+     */
+    function del_redis_cache($name, $key){
+
+        list($keys,$exprise) = $this->get_config($name, $key);
+
+        $data = $this->cache->del($keys);
+
+        return $data;
+    }
 }

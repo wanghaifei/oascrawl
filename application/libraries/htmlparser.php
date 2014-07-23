@@ -11,86 +11,77 @@ define('UPLOADFILE', 'http://www.komiksurat.com/upload.php');
 require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
 
 class htmlparser {
-
-    private $host = '';
-
+    /** 当前编码 @var string */
+    private $charset = 'UTF-8';
+    /** 详情页的所抓内容的最小宽度 @var string */
     private $min_width = '550';
-
-    private $score = array();
-
+    /** 符号 @var array */
     private $symbol = array(', ', ',','。', '?', ':', '!', ';');
-
-    /**
-     * @var int
-     */
-    private $html_type = 1;
-
+    /** 抓取类型: 1 抓标签列表， 2 抓标签相关列表，3 抓详细 @var array */
     private $conf_html_type = array(1, 2, 3);
-
-    /**
-     * type: A add, D decrease, M multiplication
-     * @var array
-     */
+    /** 抓类型所调用的计算分数的方法 @var array */
     private $method_lists = array(
         1 => array('children_similar'),
         2 => array('children_similar', 'children_same_url',),
         3 => array('tag_count', 'title', 'word', 'pic', 'symbol',),
     );
-
-    /**
-     *元素相似性规则列表
-     * @var array
-     */
-    private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
-
-    /**
-     * 移除元素规则列表
-     * @var array
-     */
-    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<!--.*?-->');
-
+    /** 无效标题 @var array */
     private $filter_title = array('502 Bad Gateway', 'NOT FOUND', 'Not Found');
 
-    private $html;
-    private $crawl_url;
+    /** 元素相似性规则列表 @var array */
+    private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
 
-    private $charset = 'UTF-8';
-    private $html_charset = '';
+    /** 移除元素规则列表 @var array */
+    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<!--.*?-->');
 
+    /** 抓取页的相关信息 */
+    private $html_type;        /** 抓取类型 @var int */
+    private $host;             /** 抓取域名 @var string */
+    private $html;             /** 抓取到的页面内容 @var string */
+    private $crawl_url;        /** 所要抓取的url @var  string*/
+    private $html_charset;     /** 抓取到的页面编码 @var string */
+    private $score = array(); /** 标签lable信息 @var array*/
+
+    /**
+     * 构造函数
+     */
     public function __construct()
     {
         $this->_ci = get_instance();
         $this->_ci->load->helper('global');
-//        $this->_ci->load->library('fetchurl');
-    }
-
-    private function _init($url){
-
-        $this->crawl_url = $url;
-        if ($url_info = parse_url($url)) {
-            $this->host = $url_info['scheme'].'://'.$url_info['host'];
-        }
-//        $this->html = $this->_ci->fetchurl->fetch(htmlspecialchars_decode($url), 3, 10);
-        $this->html = send_http(htmlspecialchars_decode($url));
-        if(empty($this->html)){ die('html is empty!'); }
-
-        preg_match('|charset=(.*?)"|ims', $this->html, $charset);
-
-        $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
-
-       //$this->html = file_get_contents(dirname(dirname(__FILE__)).'/cache/bobiler.html');
-        foreach ($this->dom_filter_rules as $rule) {
-            $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
-        }
-        phpquery::newDocumentHTML($this->html);
-        // $this->remove_left_right_content();
-        //$this->filter_advertise();
     }
 
     /**
-     * 标签内文字越多，分值越大，有图片但没链接增加分值，有图片并有内容并有相同的地址则减分。
-     * 获取详情
-     * @return mixed|string
+     * 初始化
+     * @param $url
+     */
+    private function _init($url){
+
+        $this->crawl_url = $url;
+        //保存域名
+        if ($url_info = parse_url($url)) {
+            $this->host = $url_info['scheme'].'://'.$url_info['host'];
+        }
+        //抓取站点
+        $this->html = send_http(htmlspecialchars_decode($url));
+        if(empty($this->html)){ die('html is empty!'); }
+        //获取站点编码
+        preg_match('|charset=(.+?)"|ims', $this->html, $charset);
+
+        $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
+        //过滤干扰标签
+        foreach ($this->dom_filter_rules as $rule) {
+            $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
+        }
+        //phpquery 初始化
+        phpquery::newDocumentHTML($this->html);
+    }
+
+    /**
+     * @param $url
+     * @param int $type
+     * @param bool $pic
+     * @return array|bool
      */
     public function start($url, $type = 1, $pic = true)
     {
@@ -99,60 +90,67 @@ class htmlparser {
             error_log('error', 'type is error');
             return false;
         }
-
         $this->html_type = $type;
+        //如果抓取标签列表页，则不过滤左右边框，否则过滤
         $body = ($type == 1) ? true : false;
-
         if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
             $dom_lists = array('body');
         }
+        //获取每个标签的分数
         foreach ($dom_lists as $dom) {
             $this->calculate_dom_score($dom);
         }
-
+        //截取分数最高的10个标签
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
-       //$this->test($score_lists);
+        //测试
+       $this->test($score_lists);
+
         $info_lists = array();
+        //获取每个标签内有效的子标签列表，并转化编码
         foreach($score_lists as $score_info){
-            if ($valid_info = $this->get_valid_info($score_info['obj'])) {
+            if ($valid_info = $this->get_children_results($score_info['obj'])) {
                 $info_lists[] = convert_encoding($this->html_charset, $this->charset, $valid_info);
             }
         }
-        if ($data = $this->get_valid_lists($info_lists, $pic)) {
+        //获取最有效的列表，并返回
+        if ($data = $this->get_valid_results($info_lists, $pic)) {
             return $data;
         }
-
         return false;
-
     }
+
+    /**
+     * 测试
+     * @param $score_lists
+     */
     private function test($score_lists)
     {
-               foreach($score_lists as $score_info){
-                    echo $score_info['score'];
-                    echo "<br>-----------------------------------------------------------------<br>";
+        header("Content-type: text/html; charset=utf-8");
 
-                    print_r($score_info['statistics']);
-                    echo "<br>-----------------------------------------------------------------<br>";
-
-                    echo $score_info['obj']->html();
-                    echo "<br>-----------------------------------------------------------------<br>";
-                }
-                exit;
+        foreach($score_lists as $score_info){
+            echo '总分： '.$score_info['score'] ."<br>";
+            echo '统计： '.print_r($score_info['statistics'], true). "<br>";
+            echo 'HTML： '.$score_info['obj']->html(). "<br>";
+            echo "<br>-----------------------------------------------------------------<br>";
+        }
+        exit;
     }
 
+    /**
+     * 计算每个标签的分数
+     * @param $dom
+     * @return bool
+     */
     private function calculate_dom_score($dom)
     {
         //标签内无内容，则忽略
         if(strlen(trim(strip_tags(pq($dom)->html(), '<img>'))) === 0 ){
             return false;
         }
-
         $dom_children = pq($dom)->children();
         //如果没有子标签，则不计算分数
-        if (false == trim(pq($dom_children)->eq(0))) {
-            return false;
-        }
+        if (false == trim(pq($dom_children)->eq(0))) return false;
 
         foreach($dom_children as $elem){
             $this->calculate_dom_score($elem);
@@ -184,10 +182,8 @@ class htmlparser {
 
         for ($k = 0; $k < count($dom_children); $k++) {
             $html = pq($dom_children)->eq($k);
-            //如果存在<iframe，则忽略
-            if(strstr($html, '<iframe ')) continue;
-            //过滤无效标签
-            if(! strip_tags($html, '<img>')) continue;
+            //如果存在<iframe 或没有图片或没有内容则忽略
+            if(strstr($html, '<iframe ') || ! strip_tags($html, '<img>')) continue;
             //去除所有的text
             $html = preg_replace('/(?<=[>])[^<>]+?(?=[<])/is', '', $html);
             $html = preg_replace('|<a .*?>|ims', '<a>', $html);
@@ -310,7 +306,6 @@ class htmlparser {
         //统计文字长度
         $replace = preg_replace('|<a .*?</a>|ims', '', $currentHtml);
         $replace = str_replace(' ', '', $replace);
-
         $currentScore += mb_strlen($replace, $this->html_charset);
 
         return $currentScore;
@@ -340,7 +335,6 @@ class htmlparser {
                 }
             }
         }*/
-
     }
     /**
      * 图片分数
@@ -360,16 +354,22 @@ class htmlparser {
 
         $img_html = strip_tags($html, '<img><a>');
 
+        //获取标签里最大的图片的高宽
+        $max_width = 0;
         foreach ($preg_lable as $lable_info) {
-            if (preg_match('|' . $lable_info . '|ims', $img_html, $pic_info)) {
-                foreach ($preg_lists as $preg_info) {
-                    if (preg_match('|' . $preg_info . '|ims', $pic_info[1], $score)) {
-                        $currentScore += intval(trim($score[1]));
-                        break 2;
+            if (preg_match_all('|' . $lable_info . '|ims', $img_html, $attr_lists)) {
+                foreach($attr_lists[1] as $pic_info){
+                    foreach ($preg_lists as $preg_info) {
+                        if (preg_match('|' . $preg_info . '|ims', $pic_info, $score)) {
+                            $score = intval(trim($score[1]));
+                            if($score > $max_width)  $max_width = $score;
+                        }
                     }
                 }
             }
         }
+        $currentScore += $max_width;
+
         //下载图片计算高宽
         if ($currentScore === 0) {
             if(preg_match('|<img src="(.*?)"|ims', $html, $img_src)){
@@ -429,6 +429,159 @@ class htmlparser {
     }
 
     /**
+     * 获取有效信息列表
+     * @param $dom
+     * @return array|bool
+     */
+    private function get_children_results($dom)
+    {
+        $ret_info = array();
+        $dom_children = pq($dom)->children();
+
+        switch($this->html_type){
+            case 1 :
+                for ($k = 0; $k < count($dom_children); $k++) {
+                    $html = pq($dom_children)->eq($k);
+
+                    if (! preg_match_all('|<a [^<>]*?href="(.*?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
+
+                    if(count($out[1]) > 1 || strstr($out[2][0], '<img ')) return false;
+
+                    $url = $out[1][0];
+                    $url = $this->add_host($url);
+                    $tag = trim(strip_tags($out[2][0]));
+
+                    $ret_info[] = array('tag'=>$tag, 'url'=>htmlspecialchars_decode($url));
+                }
+                return $ret_info;
+
+            case 2 :
+
+                for ($k = 0; $k < count($dom_children); $k++) {
+
+                    $html = trim(pq($dom_children)->eq($k));
+
+                    $replace = str_replace(' ', '', strip_tags($html, '<img>'));
+
+                    if(empty($replace) || strstr($html, '<iframe ') || strpos($html, '<a ') === 0){
+                        continue;
+                    }
+                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) {
+                        continue;
+                    }
+
+                    $url_lists = $out[1];
+                    $content_lists = $out[2];
+                    //获取重复地址
+                    if ($same_urls = array_diff_key($url_lists, array_unique($url_lists))) {
+                        $keyArr = array_keys($same_urls);
+                        $key_1 = $keyArr[0];
+                        $key_2 = array_search($url_lists[$key_1], $url_lists);
+                        $content_lists = array($key_1=>$content_lists[$key_1], $key_2=>$content_lists[$key_2]);
+                    }
+
+                    foreach ($content_lists as $key=>$content)
+                    {
+                        $temp_content = trim(strip_tags($content));
+                        if (false != str_replace(' ', '', $temp_content)) {
+                            $title = $temp_content;
+                            $html = str_replace($title, '', $html);
+                            $url = $this->add_host($url_lists[$key]);
+                            break;
+                        }
+                    }
+                    $html = substr($html, 0);
+                    @$ret_info[] = array('url'=>htmlspecialchars_decode($url), 'title'=>$title, 'description'=>$html);
+                }
+
+                return $ret_info;
+
+            case 3 :
+                $html = pq($dom)->html();
+
+                $ret_info = array('content'=>$html);
+
+                if (preg_match('|<h[1-2]>(.*?)</h[1-2]>|ims', $html, $out)) {
+                    $title = $out[1];
+                    $html = preg_replace('|<h[1-2]>(.*?)</h[1-2]>|ims', '', $html);
+
+                    $ret_info = array('title'=>$title, 'content'=>$html);
+                }
+                return $ret_info;
+        }
+    }
+
+    private function get_valid_results($lists, $pic)
+    {
+        //有图片则计算图片, 图片最多的为有效的
+        $count = $data = array();
+
+        switch($this->html_type){
+
+            case 1 :
+                $data = $lists[0];
+                break;
+
+            case 2 :
+                $data = $lists[0];
+                //获取列表内图片最多的元素
+                if ($pic) {
+                    foreach($lists as $key_1=>$info)
+                    {
+                        $pic_count = 0;
+                        foreach ($info as $val) {
+                            if(strstr($val['description'], '<img ')) $pic_count++;
+                        }
+                        $count[$key_1] = $pic_count;
+                    }
+                    $pos = array_search(max($count), $count);
+                    $data = $lists[$pos];
+                }
+                foreach ($data as $key => $info) {
+                    $data[$key]['description'] = $this->filter_lable($info['description'], 'a');
+                    $data[$key]['description'] = $this->pic_save($info['description']);
+                }
+                break;
+
+            case 3:
+               if(in_array($lists[0]['title'], $this->filter_title)){
+                   return false;
+               }else{
+                   $data = $lists[0];
+                   $data['content'] = $this->filter_lable($data['content'], 'a');
+                   $data['content'] = $this->pic_save($data['content']);
+               }
+               break;
+        }
+        return $data;
+    }
+
+    private function filter_lable($html, $lable)
+    {
+        $html = str_replace('</'.$lable. '>', '', $html);
+        $html = preg_replace('|<'.$lable.' [^<]*?>|ims', '',$html);
+        return $html;
+    }
+
+    private function pic_save($html)
+    {
+        $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
+
+        //保存图片，并替换图片地址
+        if(preg_match_all('|<img src="(.*?)"|ims', $html, $img_src)){
+            foreach ($img_src[1] as $src_info) {
+                $ext = substr(strrchr($src_info, '.'), 0);
+                if(in_array($ext , $allowExt)){
+                    $pic_info = $this->pic_upload($this->add_host($src_info));
+                    if(!empty($pic_info['url'])) $html = str_replace($src_info, $pic_info['url'], $html);
+                }
+            }
+        }
+
+        return $html;
+    }
+
+    /**
      * @param $pic_url
      * @return mixed
      */
@@ -456,7 +609,7 @@ class htmlparser {
     }
 
     /**
-     * 获取css文件内的元素名 example:   #navList a:link, #navList a:visited, #navList a:active
+     * 获取css文件内的元素名 example:
      * @return array|bool
      */
     private function get_css_dom_lists()
@@ -495,237 +648,80 @@ class htmlparser {
         return $dom_arr;
     }
 
+    /**
+     * 获取翻页的url
+     * @return array
+     */
     public function turn_page_url(){
 
         $valid_url = array();
 
+        //如果抓取url字符串中存在 ? , 则使用此规则抓取
         if (strstr($this->crawl_url, '?')){
-
             list($crawl_url_real, $crawl_url_param) = explode('?' , $this->crawl_url);
+            //匹配规则列表
+            $preg_rules = array(
+                '<a [^<>]*?href="([^javascript].*?)"',
+                '<a [^<>]*?onclick="window.location=\'(.*?)\'"'
+            );
 
-            //<a href="javascript:void(0);" onclick="window.location='/search?q=animals&pn=2&p=tag'"
-            preg_match_all('|<a [^<>]*?href="([^javascript].*?)"|ims', $this->html, $url_lists);
-            preg_match_all('|<a [^<>]*?onclick="window.location=\'(.*?)\'"|ims', $this->html, $url_lists_1);
+            foreach ($preg_rules as $rule) {
+                if(false != preg_match_all('|' . $rule . '|ims', $this->html, $url_lists)){
 
-            $url_lists = array_merge($url_lists[1], $url_lists_1[1]);
+                    foreach ($url_lists as $url) {
+                        $url = $this->add_host($url);
+                        if (! strstr($url, '?')) continue;
 
-            foreach ($url_lists as $url) {
-                $url = $this->add_host($url);
-                if (! strstr($url, '?')) continue;
+                        list($url_real, $url_param) = explode('?', $url);
 
-                list($url_real, $url_param) = explode('?', $url);
+                        if($crawl_url_real != $url_real) continue;
+                        if(empty($crawl_url_param) || empty($url_param)) continue;;
 
-                if($crawl_url_real != $url_real) continue;
-                if(empty($crawl_url_param) || empty($url_param)) continue;;
+                        parse_str($url_param, $param_arr);
+                        parse_str($crawl_url_param, $crawl_param_arr);
+                        $param_intersect = array_intersect(array_keys($param_arr), array_keys($crawl_param_arr));
+                        if(count($param_intersect) != count($crawl_param_arr)) continue;
+                        $valid_url[] = $url;
+                    }
 
-                parse_str($url_param, $param_arr);
-                parse_str($crawl_url_param, $crawl_param_arr);
-                $param_intersect = array_intersect(array_keys($param_arr), array_keys($crawl_param_arr));
-                if(count($param_intersect) != count($crawl_param_arr)) continue;
-                $valid_url[] = $url;
+                }
             }
         }
+        //如果翻页url为空，或者抓取url存在于翻页url中（避免抓取到标签列表页），使用此规则
+        if (empty($valid_url) || in_array($this->crawl_url, $valid_url))
+        {
+            $valid_url = $pages = $url_lists = array();
 
-        if (empty($valid_url) || in_array($this->crawl_url, $valid_url)) {
-            $valid_url = array();
-            $url_lists = array();
-            foreach ($this->score as $score_info) {
+            foreach ($this->score as $score_info)
+            {
                 $html = $score_info['obj']->html();
-                $replace = str_replace(' ', '', strip_tags($html));
-
-                if(empty($replace)) continue;
-
+                //没有text则无效
+                if(false == str_replace(' ', '', strip_tags($html))) continue;
+                //没有子标签则无效
                 $dom_children = pq($score_info['obj'])->children();
-                $count = count($dom_children);
-                if($count === 0) continue;
-
-                $pages = array();
+                if( 0 === $count = count($dom_children)) continue;
+                //获取有效的url列表列表
                 for ($k = 0; $k < $count; $k++) {
                     $html = pq($dom_children)->eq($k);
                     $a_preg = '|<a [^<>#]*?href="([^#]+?)".*?>(.*?)</a>|ims';
-
-                    if (! preg_match_all($a_preg, trim($html), $out)) {
-                        continue;
-                    }
-                    $urls = $out[1];
-                    if(count($urls) > 1 || ! ctype_digit(strip_tags($out[2][0]))) continue;
-
-                    $pages[] = $this->add_host($urls[0]);
+                    if (! preg_match_all($a_preg, trim($html), $out)) continue;
+                    if(count($out[1]) > 1 || ! ctype_digit(strip_tags($out[2][0]))) continue;
+                    $pages[] = $this->add_host($out[1][0]);
                 }
-
                 if(!empty($pages)) $url_lists[] = $pages;
             }
-
+            //每个标签中url最多的则是有效的
             foreach((array)$url_lists as $pages){
                 if(count($pages) > count($valid_url)) $valid_url = $pages;
             }
         }
-
         return $valid_url;
     }
-
     /**
-     * 获取有效信息列表
-     * @param $dom
-     * @return array|bool
+     * 增加域名
+     * @param $url
+     * @return string
      */
-    private function get_valid_info($dom)
-    {
-        $errors = array();
-        $ret_info = array();
-        $dom_children = pq($dom)->children();
-
-        switch($this->html_type){
-            case 1 :
-                for ($k = 0; $k < count($dom_children); $k++) {
-                    $html = pq($dom_children)->eq($k);
-
-                    if (! preg_match_all('|<a [^<>]*?href="(.*?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
-                    //多个<a>
-                    if(count($out[1]) > 1) return false;
-                    //标签内有图片
-                    if(strstr($out[2][0], '<img ')) return false;
-
-                    $url = $out[1][0];
-                    $url = $this->add_host($url);
-                    $tag = trim(strip_tags($out[2][0]));
-                    //多个<a> 或 标签字符串太长
-                    //if(count($out[1])>1 || mb_strlen($tag, $this->html_charset) > 20) return false;
-
-                    $ret_info[] = array('tag'=>$tag, 'url'=>htmlspecialchars_decode($url));
-                }
-                return $ret_info;
-
-            case 2 :
-                //子标签较少，并且<a>内字符串太短，则无效
-                $is_long = false;
-
-                for ($k = 0; $k < count($dom_children); $k++) {
-
-                    $html = trim(pq($dom_children)->eq($k));
-
-                    $replace = str_replace(' ', '', strip_tags($html, '<img>'));
-
-                    if(empty($replace) || strstr($html, '<iframe ') || strpos($html, '<a ') === 0){
-                        continue;
-                    }
-                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) {
-                        continue;
-                    }
-
-                    $url_lists = $out[1];
-                    $content_lists = $out[2];
-                    //获取重复地址
-                    if ($same_urls = array_diff_key($url_lists, array_unique($url_lists))) {
-                        $keyArr = array_keys($same_urls);
-                        $key_1 = $keyArr[0];
-                        $key_2 = array_search($url_lists[$key_1], $url_lists);
-                        $content_lists = array($key_1=>$content_lists[$key_1], $key_2=>$content_lists[$key_2]);
-                    }
-
-                    foreach ($content_lists as $key=>$content)
-                    {
-                        $temp_content = trim(strip_tags($content));
-                        if (false != str_replace(' ', '', $temp_content)) {
-                            $title = $temp_content;
-                            $html = str_replace($title, '', $html);
-                            $url = $this->add_host($url_lists[$key]);
-                            break;
-                            //if(mb_strlen($title, $this->html_charset) > 25) $is_long = true;
-                        }
-                    }
-                    $html = substr($html, 0);
-                    @$ret_info[] = array('url'=>htmlspecialchars_decode($url), 'title'=>$title, 'description'=>$html);
-                }
-
-                //if(count($dom_children) < 8 && !$is_long) return false;
-                //保存图片
-                //todo
-                return $ret_info;
-
-            case 3 :
-                $html = pq($dom)->html();
-
-                $ret_info = array('content'=>$html);
-
-                if (preg_match('|<h[1-2]>(.*?)</h[1-2]>|ims', $html, $out)) {
-                    $title = $out[1];
-                    $html = preg_replace('|<h[1-2]>(.*?)</h[1-2]>|ims', '', $html);
-
-                    $ret_info = array('title'=>$title, 'content'=>$html);
-                }
-                return $ret_info;
-        }
-    }
-
-    private function get_valid_lists($lists, $pic)
-    {
-        //有图片则计算图片, 图片最多的为有效的
-        $count = $data = array();
-        $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
-
-        switch($this->html_type){
-
-            case 1 :
-                $data = $lists[0];
-                break;
-
-            case 2 :
-                $data = $lists[0];
-                //获取列表内图片最多的元素
-                if ($pic) {
-                    foreach($lists as $key_1=>$info)
-                    {
-                        $pic_count = 0;
-                        foreach ($info as $val) {
-                            if(strstr($val['description'], '<img ')) $pic_count++;
-                        }
-                        $count[$key_1] = $pic_count;
-                    }
-                    $pos = array_search(max($count), $count);
-                    $data = $lists[$pos];
-                }
-                foreach ($data as $key => $info) {
-                    //删除a标签
-                    $data[$key]['description'] = str_replace('</a>', '', $data[$key]['description']);
-                    $data[$key]['description'] = preg_replace('|<a [^<]*?>|ims', '',$data[$key]['description']);
-                    //保存图片，并替换图片地址
-                    if(preg_match_all('|<img src="(.*?)"|ims', $info['description'], $img_src)){
-                        foreach ($img_src[1] as $src_info) {
-                            $ext = substr(strrchr($src_info, '.'), 0);
-                            if(in_array($ext , $allowExt)){
-                                $pic_info = $this->pic_upload($this->add_host($src_info));
-                                if(!empty($pic_info['url'])) $data[$key]['description'] = str_replace($src_info, $pic_info['url'], $data[$key]['description']);
-                            }
-                        }
-                    }
-                }
-                break;
-
-            case 3:
-               if(in_array($lists[0]['title'], $this->filter_title)){
-                   return false;
-               }else{
-                   $data = $lists[0];
-                   //删除a标签
-                   $data['content'] = str_replace('</a>', '', $data['content']);
-                   $data['content'] = preg_replace('|<a [^<]*?>|ims', '',$data['content']);
-                   //保存图片，并替换图片地址
-                   if(preg_match_all('|<img src="(.*?)"|ims', $data['content'], $img_src)){
-                       foreach ($img_src[1] as $src_info) {
-                           $ext = substr(strrchr($src_info, '.'), 0);
-                           if(in_array($ext , $allowExt)){
-                               $pic_info = $this->pic_upload($this->add_host($src_info));
-                               if(!empty($pic_info['url'])) $data['content'] = str_replace($src_info, $pic_info['url'], $data['content']);
-                           }
-                       }
-                   }
-               }
-               break;
-        }
-        return $data;
-    }
-
     private function add_host($url)
     {
         if (strpos($url, 'http') !== 0){
@@ -734,4 +730,5 @@ class htmlparser {
         }
         return $url;
     }
+
 }

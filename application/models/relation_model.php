@@ -165,10 +165,17 @@ class Relation_model extends CI_Model {
     /**
      * 更新下次抓取时间
      * @param $id
+     * @param bool $init 是否初始化为0
      * @return mixed
      */
-    public function update_nexttime($id)
+    public function update_nexttime($id, $init = false)
     {
+        $this->mongo_db->where(array('_id'=>$id));
+        /** 初始化下次抓取时间 */
+        if ($init) {
+            return $this->mongo_db->update($this->tags_coll, array('nexttime'=>0));
+        }
+
         $tagurl_info = $this->findOneByID($id);
         $interval_lists = $this->config->item('time_interval');
 
@@ -182,14 +189,22 @@ class Relation_model extends CI_Model {
                 break;
             }
         }
-        $this->mongo_db->where(array('_id'=>$id));
         return $this->mongo_db->update($this->tags_coll, array('nexttime'=>$interval), array(), '$inc');
     }
 
-    //更新上次抓取时间
-    public function update_lasttime($id)
+    /**
+     * 更新上次抓取时间
+     * @param $id
+     * @param bool $init 是否初始化为0
+     * @return mixed
+     */
+    public function update_lasttime($id, $init = false)
     {
         $this->mongo_db->where(array('_id'=>$id));
+        /** 初始化上次抓取时间 */
+        if ($init) {
+            return $this->mongo_db->update($this->tags_coll, array('lasttime'=>0));
+        }
         return $this->mongo_db->update($this->tags_coll, array('lasttime'=>time()));
     }
 

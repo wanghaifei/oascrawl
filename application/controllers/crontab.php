@@ -218,53 +218,10 @@ class Crontab extends CI_Controller {
             if ($unlock) {
                 $info = $this->relation_model->findOneByUrl($crawl_info['url']);
                 $this->relation_model->update_nexttime($info['_id']);
+                $this->relation_model->init_lastcount($info['_id']);
                 $this->relation_model->update_status($info['_id'], 0);
             }
         }
-    }
-
-    /**
-     * 清空缓存
-     */
-    public function emptycache()
-    {
-        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
-            foreach ($unlock_lists as $crawl_info) {
-                $this->redis_model->set_redis_cache('url_relation', $crawl_info['url'], array());
-            }
-        }
-    }
-
-    /**
-     * 缓存状态
-     */
-    public function stat_cache()
-    {
-        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
-            foreach ($unlock_lists as $crawl_info) {
-                $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
-                echo $crawl_info['url'];
-                echo "<br>--------------------------------------<br>";
-                print_r($crawl_url_lists);
-                echo "<br><br>-------------------------------------------------------------------------------------------------------------<br><br>";
-            }
-        }
-    }
-
-    function test()
-    {
-        $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', 'http://www.komikdunya.com/komikresimleri/16-resimler/');
-        print_r($crawl_url_lists);
-    }
-
-    public function test_crawl()
-    {
-        $relation_lists = $this->htmlparser->start('http://www.komikler.com/komikresim/kategori.php?catid=26', 2, 1);
-//        $relation_lists = $this->htmlparser->start('http://www.komikdunya.com/komikresim/tabela/652/saglikli-kurban-kesimi-yapilir/', 3);
-
-       // $turn_page_url = $this->htmlparser->turn_page_url();
-        print_r($relation_lists);
-
     }
 }
 
