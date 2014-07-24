@@ -523,16 +523,26 @@ class htmlparser {
                 break;
 
             case 2 :
-                $data = $lists[0];
+                //$data = $lists[0];
+                //抓取url存在于列表中,则跳过
+                foreach($lists as $info){
+                    $url_lists = array_column($info, 'url');
+                    if(! in_array($this->crawl_url, $url_lists)){
+                        $data = $info;
+                        break;
+                    }
+                }
                 //获取列表内图片最多的元素
                 if ($pic) {
                     foreach($lists as $key_1=>$info)
                     {
-                        $pic_count = 0;
-                        foreach ($info as $val) {
-                            if(strstr($val['description'], '<img ')) $pic_count++;
+                        if ($pic) {
+                            $pic_count = 0;
+                            foreach ($info as $val) {
+                                if(strstr($val['description'], '<img ')) $pic_count++;
+                            }
+                            $count[$key_1] = $pic_count;
                         }
-                        $count[$key_1] = $pic_count;
                     }
                     $pos = array_search(max($count), $count);
                     $data = $lists[$pos];
