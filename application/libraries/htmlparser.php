@@ -372,7 +372,7 @@ class htmlparser {
 
         //下载图片计算高宽
         if ($currentScore === 0) {
-            if(preg_match('|<img src="(.*?)"|ims', $html, $img_src)){
+            if(preg_match('|<img .*?src="(.*?)"|ims', $html, $img_src)){
                 $pic_info = $this->pic_upload($this->add_host($img_src[1]));
                 if(!empty($pic_info['width'])) $currentScore += $pic_info['width'];
             }
@@ -568,7 +568,7 @@ class htmlparser {
         $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
 
         //保存图片，并替换图片地址
-        if(preg_match_all('|<img src="(.*?)"|ims', $html, $img_src)){
+        if(preg_match_all('|<img .*?src="(.*?)"|ims', $html, $img_src)){
             foreach ($img_src[1] as $src_info) {
                 $ext = substr(strrchr($src_info, '.'), 0);
                 if(in_array($ext , $allowExt)){
