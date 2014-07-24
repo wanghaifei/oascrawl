@@ -104,7 +104,7 @@ class htmlparser {
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
         //测试
-       $this->test($score_lists);
+       //$this->test($score_lists);
 
         $info_lists = array();
         //获取每个标签内有效的子标签列表，并转化编码
