@@ -16,11 +16,6 @@ class Crontab extends CI_Controller {
         $this->load->library('htmlparser');
     }
 
-    public function index()
-    {
-
-    }
-
     public function sync_feeds(){
         $total = $this->feeds_model->find(array(), 0, 0, true);
         $offset = 0;
