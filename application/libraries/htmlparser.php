@@ -774,14 +774,16 @@ class htmlparser {
                 phpquery::newDocumentHTML(pq($dom)->html());
             }
             $item_area = $parser_rule['item_area'];
-            $item_lists = pq("div[".$item_area['type']."^=".$item_area['val']."]");
-
+            //$item_lists = pq("div[".$item_area['type']."^=".$item_area['val']."]");
+            $item_lists = pq("div[".$item_area['type']."='".$item_area['val']."']");
             $info_lists = array();
 
             foreach($item_lists as $item){
                 $item_html = pq($item)->html();
+
                 if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|', '', $item_html)))) continue;
-                if(strstr($item_html, $this->crawl_url)) continue;
+                //if(strstr($item_html, $this->crawl_url)) continue;
+
                 //获取标题、链接、内容
                 if(! preg_match('|<a .*?href="(.+?)".*?>(.+?)</a>|ims', $item_html, $url_title)) continue;
 

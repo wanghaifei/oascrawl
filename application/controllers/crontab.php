@@ -55,7 +55,7 @@ class Crontab extends CI_Controller {
             }else{
                 $tags = array($info['tag']);
             }
-            $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid'], $queue_info['division'], $queue_info['division']);
+            $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid'], $queue_info['division'], $queue_info['rule_id']);
         }
 
     }
