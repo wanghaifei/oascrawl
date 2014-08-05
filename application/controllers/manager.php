@@ -81,6 +81,8 @@ class Manager extends CI_Controller {
      */
     public function tcrawl()
     {
+        header("Content-type: text/html; charset=utf-8");
+
         if(empty($_GET['url'])) die();
 
         if ('' == $url = $_GET['url']) die();

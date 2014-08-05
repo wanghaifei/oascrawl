@@ -6,7 +6,10 @@
 
 class Feeds_model extends CI_Model {
 
-	var $db = 'index';
+    /**
+     * @var string
+     */
+    var $db = 'index';
     var $feeds_coll = "feeds";
 
     /**

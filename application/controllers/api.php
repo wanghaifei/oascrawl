@@ -30,7 +30,7 @@ class Api extends CI_Controller {
      * @param $coll 要查找的集合
      * @param int $next_cursor 毫秒
      * @param int $limit 返回数目
-     * @usage : next_cursor('humor', 1405385114.351, 20)
+     * @usage : next_cursor('humor', 1405385114351, 20)
      */
     public function next_cursor($coll, $next_cursor = 0, $limit = 20){
 

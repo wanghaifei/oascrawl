@@ -111,7 +111,6 @@ class Crontab extends CI_Controller {
         $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
 
         $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic']);
-
         $url_pages = $this->htmlparser->turn_page_url();
 
         $class_info = $this->class_model->findOne(array('classid'=>$classid));
