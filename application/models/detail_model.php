@@ -16,15 +16,17 @@ class Detail_model extends CI_Model {
      * created:  创建时间.
      * mcreated: 创建时间（毫秒）.
      * tags:  该标签所属标签列表。
-     * status : -1 删除, 0 无效, 1 未经审核， 2 审核
+     * status : -1 删除, 0 抓取未完成, 1 抓取完成
+     * division: 网站抓取内容分类， 1 图片, 2 文字。
      * title: 标题
      * description: 描述,缩率信息
      * content: 主要内容.
      */
     var $detail_fields = array();
 
-    // -1 删除, 0 无效, 1 未经审核， 2 审核
-    var $conf_status = array(-1, 0, 1, 2);
+    //  -1 删除, 0 抓取未完成, 1 抓取完成
+    var $conf_status = array(-1, 0, 1);
+    var $conf_division = array(1, 2);
 
     function __construct() {
         parent::__construct();
@@ -159,13 +161,13 @@ class Detail_model extends CI_Model {
      * @param $classid
      * @return mixed
      */
-    public function add($pid, $url, $tags, $data)
+    public function add($pid, $url, $tags, $data, $division = 1)
     {
         list($usec, $sec) = explode(" ",microtime());
         $msec = intval($sec*1000000) + intval($usec*1000000);
 
         $info = array(
-            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => $sec, 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => $sec, 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0, 'division'=>$division
         );
         $data = array_merge($data, $info);
         return $this->mongo_db->insert($this->detail_table, $data);

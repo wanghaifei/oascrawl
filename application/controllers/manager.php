@@ -36,11 +36,11 @@ class Manager extends CI_Controller {
 
     public function add_feeds()
     {
-        //$this->feeds_model->add('http://www.999gag.com/en/tag', 1, array('gaoxiao'), 1);
-        //$this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array('gaoxiao'), 1);
-        //$this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array('gaoxiao'), 1);
-        //$this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array('gaoxiao'), 1);
-        $this->feeds_model->add('http://www.komikfikralar.org/', 1, array());
+        //$this->feeds_model->add('http://www.999gag.com/en/tag', 1, array(), 1, 1);
+        //$this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array(), 1, 1);
+        //$this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 1);
+        //$this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array('gaoxiao'), 1, 1);
+        $this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 2, 1);
     }
 
     /**

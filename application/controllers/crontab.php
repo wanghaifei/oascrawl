@@ -55,7 +55,7 @@ class Crontab extends CI_Controller {
             }else{
                 $tags = array($info['tag']);
             }
-            $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid']);
+            $this->relation_model->add($queue_info['_id'], $info['url'], $tags, $queue_info['rel_with_pic'], $queue_info['classid'], $queue_info['division'], $queue_info['division']);
         }
 
     }
@@ -110,7 +110,7 @@ class Crontab extends CI_Controller {
 
         $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
 
-        $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic']);
+        $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic'],  $crawl_info['rule_id']);
         $url_pages = $this->htmlparser->turn_page_url();
 
         $class_info = $this->class_model->findOne(array('classid'=>$classid));
@@ -130,7 +130,7 @@ class Crontab extends CI_Controller {
 
             $data['page_url'] = $crawl_info['url'];
 
-            $this->detail_model->add($crawl_info['_id'], $url_info['url'], $crawl_info['tags'], $data);
+            $this->detail_model->add($crawl_info['_id'], $url_info['url'], $crawl_info['tags'], $data, $crawl_info['division']);
             $this->queue_model->add_queue(self::Q_DETAIL, array('url'=>$url_info['url'], 'classid'=>$classid ));
             $insert_count++;
         }

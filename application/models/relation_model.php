@@ -28,12 +28,13 @@ class Relation_model extends CI_Model {
     * nexttime:  下次抓取时间。
     * lastcount: 上次抓取到的新信息数。
     * status:  抓取状态。
+    * division: 网站抓取内容分类， 1 图片, 2 文字。
     * tags:  该标签所属标签列表。
     * with_pic : 抓取列表是否存在图片。1 ：存在， 0： 不存在
     * classid: 分类，（sports, humor, ......................）
     * ruleid:  匹配规则ID，默认为0。
      */
-    var $feedurl_fields = array('_id', 'feedid', 'url', 'created', 'lasttime', 'nexttime', 'lastcount', 'status', 'classid', 'tags', 'with_pic', 'rule_id');
+    var $feedurl_fields = array('_id', 'feedid', 'url', 'created', 'lasttime', 'nexttime', 'lastcount', 'status', 'division', 'classid', 'tags', 'with_pic', 'rule_id');
 
     // 0 未开始抓取，1 正在抓取.
     var $conf_status = array(0, 1);
@@ -114,10 +115,10 @@ class Relation_model extends CI_Model {
         return $this->mongo_db->get($this->tags_coll);
     }
 
-    public function add($pid, $url, $tags, $with_pic, $classid, $rule_id = 0)
+    public function add($pid, $url, $tags, $with_pic, $classid, $division = 1, $rule_id = 0)
     {
         $tagurl_info = array(
-            '_id' => md5($url), 'pid'=>$pid, 'url' => $url, 'created' => time(), 'lasttime' => 0, 'nexttime' => 0, 'status' => 0, 'tags' => $tags, 'with_pic'=>$with_pic, 'classid' => $classid, 'rule_id' => $rule_id
+            '_id' => md5($url), 'pid'=>$pid, 'url' => $url, 'created' => time(), 'lasttime' => 0, 'nexttime' => 0, 'status' => 0, 'division'=>$division, 'tags' => $tags, 'with_pic'=>$with_pic, 'classid' => $classid, 'rule_id' => $rule_id
         );
         return $this->mongo_db->insert($this->tags_coll, $tagurl_info);
     }
