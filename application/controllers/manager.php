@@ -40,7 +40,7 @@ class Manager extends CI_Controller {
         //$this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array(), 1, 0);
         //$this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 0);
         $this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array(), 1, 0);
-        $this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
+        //$this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
     }
 
     /**

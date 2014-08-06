@@ -87,26 +87,26 @@ class Api extends CI_Controller {
      * 调试
      */
     function test(){
-        $article_list = $this->get_article_date_range(time()-3600,time());
-        print_r($article_list);
+//        $article_list = $this->get_article_date_range(time()-3600,time());
+        //print_r($article_list);
+        $cc = file_get_contents('http://127.0.0.1/api/repair?title='.'Ãcat resimleri 7258');
+        echo $cc;
     }
 
     /**
      * 标题乱码修复
      * @param $json_data
      */
-    function repair($json_data)
+    public function repair()
     {
-        $humor_info = json_decode($json_data, true);
-
         $this->load->model('detail_model');
-
         $this->detail_model->setTableName('humor_bak');
 
-        $data = $this->detail_model->find(array('title'=>$humor_info['title']));
-
-        if(empty($data) || count($data) > 1){
-            $data = $this->detail_model->find(array('content'=>$humor_info['content']));
+        if(!empty($_GET['title'])){
+            $data = $this->detail_model->find(array('title'=>$_GET['title']));
+        }
+        if(empty($_GET['title']) || empty($data) || count($data) > 1){
+            $data = $this->detail_model->find(array('content'=>$_GET['content']));
         }
 
         $this->detail_model->setTableName('humor');
