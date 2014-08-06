@@ -18,13 +18,12 @@ class Feeds_model extends CI_Model {
      * created:  创建时间.
      * status:  抓取状态。
      * classid: 分类，（sports, humor, ......................）
-     * division : 网站抓取内容分类， 1 图片, 2 文字。
      * tags:  该标签所属标签列表。
      * rel_with_pic: 相关列表是否存在图片。  1 ：存在， 0： 不存在
      * rule_id:  匹配规则ID，默认为0。
      */
     //     * filter_lr_content: 是否过滤左右内容。(有的站点标签列表在左边或右边，也有的在中间)   1：过滤， 0：不过滤。
-    var $feeds_fields = array('_id', 'url', 'created', 'status', 'classid', 'division', 'tags', 'rel_with_pic', 'rule_id');
+    var $feeds_fields = array('_id', 'url', 'created', 'status', 'classid', 'tags', 'rel_with_pic', 'rule_id');
 
 	function __construct() {
 		parent::__construct();
@@ -87,9 +86,9 @@ class Feeds_model extends CI_Model {
         return $this->findOneByID(md5($url));
     }
 
-    public function add($url, $classid, $tags, $rel_with_pic = 1, $division = 1, $rule_id = 0)
+    public function add($url, $classid, $tags, $rel_with_pic = 1, $rule_id = 0)
     {
-        $insert_data = array('_id'=>md5($url), 'url'=>$url, 'created'=>time(), 'status'=>1, 'classid'=>$classid, 'division'=>$division, 'tags'=>$tags, 'rel_with_pic'=>$rel_with_pic, 'rule_id'=>$rule_id);
+        $insert_data = array('_id'=>md5($url), 'url'=>$url, 'created'=>time(), 'status'=>1, 'classid'=>$classid, 'tags'=>$tags, 'rel_with_pic'=>$rel_with_pic, 'rule_id'=>$rule_id);
         return $this->mongo_db->insert($this->feeds_coll, $insert_data);
 
     }

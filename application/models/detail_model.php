@@ -17,7 +17,7 @@ class Detail_model extends CI_Model {
      * mcreated: 创建时间（毫秒）.
      * tags:  该标签所属标签列表。
      * status : -1 删除, 0 抓取未完成, 1 抓取完成
-     * division: 网站抓取内容分类， 1 图片, 2 文字。
+     * with_pic : 内容是否是图片。1 ：存在， 0： 不存在
      * title: 标题
      * description: 描述,缩率信息
      * content: 主要内容.
@@ -161,13 +161,13 @@ class Detail_model extends CI_Model {
      * @param $classid
      * @return mixed
      */
-    public function add($pid, $url, $tags, $data, $division = 1)
+    public function add($pid, $url, $tags, $data)
     {
         list($usec, $sec) = explode(" ",microtime());
         $msec = intval($sec*1000000) + intval($usec*1000000);
 
         $info = array(
-            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => $sec, 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0, 'division'=>$division
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => $sec, 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0
         );
         $data = array_merge($data, $info);
         return $this->mongo_db->insert($this->detail_table, $data);

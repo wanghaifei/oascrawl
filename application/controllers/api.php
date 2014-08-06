@@ -91,6 +91,31 @@ class Api extends CI_Controller {
         print_r($article_list);
     }
 
+    /**
+     * 标题乱码修复
+     * @param $json_data
+     */
+    function repair($json_data)
+    {
+        $humor_info = json_decode($json_data, true);
+
+        $this->load->model('detail_model');
+
+        $this->detail_model->setTableName('humor_bak');
+
+        $data = $this->detail_model->find(array('title'=>$humor_info['title']));
+
+        if(empty($data) || count($data) > 1){
+            $data = $this->detail_model->find(array('content'=>$humor_info['content']));
+        }
+
+        $this->detail_model->setTableName('humor');
+
+        $data = $this->detail_model->findOneByID($data[0]['_id']);
+
+        echo json_encode($data);
+    }
+
 }
 
 /* End of file welcome.php */
