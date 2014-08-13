@@ -103,10 +103,10 @@ class Api extends CI_Controller {
         $this->detail_model->setTableName('humor_bak');
 
         if(!empty($_GET['title'])){
-            $data = $this->detail_model->find(array('title'=>$_GET['title']));
+            $data = $this->detail_model->find(array('title'=>urldecode($_GET['title'])));
         }
         if(empty($_GET['title']) || empty($data) || count($data) > 1){
-            $data = $this->detail_model->find(array('content'=>$_GET['content']));
+            $data = $this->detail_model->find(array('content'=>urldecode($_GET['content'])));
         }
 
         $this->detail_model->setTableName('humor');
