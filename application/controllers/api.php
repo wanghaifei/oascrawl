@@ -17,7 +17,6 @@ class Api extends CI_Controller {
 	{
         $this->limit = $limit;
 
-
         $this->load->model('detail_model');
 
         $this->detail_model->setTableName($coll);
