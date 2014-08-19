@@ -36,11 +36,12 @@ class Manager extends CI_Controller {
 
     public function add_feeds()
     {
-        //$this->feeds_model->add('http://www.999gag.com/en/tag', 1, array(), 1, 0);
-        //$this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array(), 1, 0);
-        //$this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 0);
-        $this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array(), 1, 0);
-        //$this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
+		//add(url, html_type, 添加的标签, 相关内容是否存在图片, 规则ID)
+        $this->feeds_model->add('http://www.999gag.com/en/tag', 1, array(), 1, 0);
+        $this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array(), 1, 0);
+        $this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 0);
+        //$this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array(), 1, 0);
+        $this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
     }
 
     /**
@@ -82,16 +83,11 @@ class Manager extends CI_Controller {
     public function tcrawl()
     {
         header("Content-type: text/html; charset=utf-8");
-
-        if(empty($_GET['url'])) die();
-
-        if ('' == $url = $_GET['url']) die();
-        $url = $_GET['url'];
+        if (false == $url = $_GET['url']) die();
         $type = !empty($_GET['type']) ? $_GET['type'] : 2;
-        $with_pic = !empty($_GET['with_pic']) ? true : false;
         $pr_page = !empty($_GET['pr_page']) ? true : false;
 
-        $lists = $this->htmlparser->start($url, $type, $with_pic);
+        $lists = $this->htmlparser->start($url, $type, @$_GET['with_pic'], @$_GET['rule_id']);
         if ($pr_page) {
             $lists = $this->htmlparser->turn_page_url();
         }

@@ -40,18 +40,29 @@ $config['rules'][1] = array(
 
 	),
 );*/
-
+/**
+ * http://www.komikfikralar.org/
+ *
+ */
 $config['rules'][1] = array(
     //相关信息规则
-    '2'=> array(
-        'html_area'=>array('type'=>'class', 'val'=>'content'),
-        'item_area'=>array('type'=>'class', 'val'=>'article'),
+/*    2 => array(
+        'html_area'=> array('dom'=> '.content', 'is_children'=> false),
+        'item_area'=> array('dom'=>'.article', 'regex'=>false),
     ),
     //详情规则
-    'detail' => array(
-
+    3 => array(
+       'html_area'=> array('dom'=> '', 'is_children'=> false),
+       'item_area'=> array('dom'=>'.article-content p', 'regex'=>false),
+    ),*/
+    //相关信息规则
+    2 => array(
+        'dom'=> '.article',
     ),
-
+    //详情规则
+    3 => array(
+        'dom'=> '.article-content p',
+    ),
 /*    'field'=>array(
         'filter' => array(),
         'description'=>array('type'=>'class', 'val'=>'article-content'),

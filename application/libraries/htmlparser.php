@@ -67,11 +67,18 @@ class htmlparser {
             $this->host = $url_info['scheme'].'://'.$url_info['host'];
         }
         //抓取站点
-        $this->html = send_http(htmlspecialchars_decode($url));
-
+        for ($i = 0; $i < 5; $i++) {
+            $http_info = send_http(htmlspecialchars_decode($url));
+            if(! is_array($http_info)){
+                $this->html = $http_info;
+                break;
+            }
+            sleep(1);
+        }
         if(empty($this->html)){ die('html is empty!'); }
         //获取站点编码
         preg_match('|charset=(.+?)"|ims', $this->html, $charset);
+
         $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
         //过滤干扰标签
         foreach ($this->dom_filter_rules as $rule) {
@@ -98,7 +105,7 @@ class htmlparser {
             return false;
         }
         //通过配置文件规则获取信息
-        if(true == $data = $this->results_byrule($rule_id)){
+        if(true == $data = $this->results_byrule($rule_id, $with_pic)){
             return $data;
         }
         //如果抓取标签列表页，则不过滤左右边框，否则过滤
@@ -444,10 +451,10 @@ class htmlparser {
      * @param $dom
      * @return array|bool
      */
-    private function get_children_results($dom)
+    private function get_children_results($dom, $get_children = true)
     {
         $ret_info = array();
-        $dom_children = pq($dom)->children();
+        $dom_children = $get_children ? pq($dom)->children() : pq($dom);
 
         switch($this->html_type){
             case 1 :
@@ -485,12 +492,12 @@ class htmlparser {
                     $content_lists = $out[2];
                     //获取重复地址
                     if ($same_urls = array_diff_key($url_lists, array_unique($url_lists))) {
+
                         $keyArr = array_keys($same_urls);
                         $key_1 = $keyArr[0];
                         $key_2 = array_search($url_lists[$key_1], $url_lists);
-                        $content_lists = array($key_1=>$content_lists[$key_1], $key_2=>$content_lists[$key_2]);
+                        $content_lists = array($key_2=>$content_lists[$key_2], $key_1=>$content_lists[$key_1]);
                     }
-
                     foreach ($content_lists as $key=>$content)
                     {
                         $temp_content = trim(strip_tags($content));
@@ -659,7 +666,7 @@ class htmlparser {
         }
         //获取有效dom
         foreach ($css_content as $content) {
-            if (preg_match_all('|'.$css_content_rule.'|ims', $content, $out1)) {
+            if (@preg_match_all('|'.$css_content_rule.'|ims', $content, $out1)) {
                 foreach($out1[2] as $key => $width) {
                     if ($width >= $this->min_width) {
                         $dom_lists =explode(',', $out1[1][$key]);
@@ -762,45 +769,16 @@ class htmlparser {
      * @param $rule_id
      * @return array|bool|string
      */
-    private function results_byrule($rule_id)
+    private function results_byrule($rule_id , $with_pic)
     {
         if($rule_id > 0 && true == $parser_rule = $this->_ci->config->config['rules'][$rule_id][$this->html_type])
         {
-            $symbol = array('class'=>'.', 'id'=>'#');
-
-            if ($html_area = $parser_rule['html_area']) {
-                $dom = $symbol[$html_area['type']].$html_area['val'];
-                if(pq($dom)->length <= 0) return false;
-                phpquery::newDocumentHTML(pq($dom)->html());
+            $item_area = $parser_rule['dom'];
+            if (!empty($item_area) && pq($item_area)->length > 0) {
+                $info_lists[] = $this->get_children_results($item_area, false);
+                //获取最有效的列表，并返回
+                return $this->get_valid_results($info_lists, $with_pic);
             }
-            $item_area = $parser_rule['item_area'];
-            //$item_lists = pq("div[".$item_area['type']."^=".$item_area['val']."]");
-            $item_lists = pq("div[".$item_area['type']."='".$item_area['val']."']");
-            $info_lists = array();
-
-            foreach($item_lists as $item){
-                $item_html = pq($item)->html();
-
-                if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|', '', $item_html)))) continue;
-                //if(strstr($item_html, $this->crawl_url)) continue;
-
-                //获取标题、链接、内容
-                if(! preg_match('|<a .*?href="(.+?)".*?>(.+?)</a>|ims', $item_html, $url_title)) continue;
-
-                $url = $this->add_host($url_title[1]);
-                $info = array('url'=>$url, 'title'=>$url_title[2]);
-                $info['description'] = str_replace($url_title[0], '', $item_html);
-                $info['description'] = preg_replace('|<a .*?</a>|', '', $info['description']);
-                //上传图片
-                if(preg_match('|<img .*?src="(.*?)"|ims', $info['description'], $img_src)){
-                    $pic_info = $this->pic_upload($this->add_host($img_src[1]));
-                    if(!empty($pic_info['url'])) $info['description'] = str_replace($img_src[1], $pic_info['url'], $info['description']);
-                }
-
-                $info_lists[] = $info;
-            }
-            //$info_lists = convert_encoding($this->html_charset, $this->charset, $info_lists);
-            return $info_lists;
         }
         return false;
     }

@@ -164,10 +164,15 @@ class Crontab extends CI_Controller {
             if(empty($crawl_info)){ sleep(2); continue; }
             else break;
         }
+        $insert_data = array();
+
+        list($usec, $sec) = explode(" ",microtime());
+        $msec = intval($sec*1000000) + intval($usec*1000000);
+
+        $insert_data['created'] = $sec;
+        $insert_data['mcreated'] = $msec;
 
         $detail_info = $this->htmlparser->start($crawl_info['url'], 3);
-
-        $insert_data = array();
 
         if(empty($detail_info['content'])) return false;
 

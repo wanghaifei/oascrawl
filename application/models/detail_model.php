@@ -163,11 +163,8 @@ class Detail_model extends CI_Model {
      */
     public function add($pid, $url, $tags, $data)
     {
-        list($usec, $sec) = explode(" ",microtime());
-        $msec = intval($sec*1000000) + intval($usec*1000000);
-
         $info = array(
-            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'created' => $sec, 'mcreated'=>$msec, 'tags' => $tags, 'status'=>0
+            '_id' => md5($url), 'tagid'=>$pid, 'url' => $url, 'tags' => $tags, 'status'=>0
         );
         $data = array_merge($data, $info);
         return $this->mongo_db->insert($this->detail_table, $data);
