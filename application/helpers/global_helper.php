@@ -36,7 +36,7 @@ function convert_encoding($from_encoding, $to_encoding, $data){
  * @param array $header xxxxxxxxx [Optional]
  * @return string $mixed
  */
-function send_http($url,$post = array(),$header = array(),$connecttimeout = 5,$timeout = 10) {
+function send_http($url,$post = array(),$header = array(),$connecttimeout = 10,$timeout = 20) {
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);

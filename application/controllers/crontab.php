@@ -131,7 +131,7 @@ class Crontab extends CI_Controller {
             $data['with_pic'] = $crawl_info['with_pic'];
 
             $this->detail_model->add($crawl_info['_id'], $url_info['url'], $crawl_info['tags'], $data);
-            $this->queue_model->add_queue(self::Q_DETAIL, array('url'=>$url_info['url'], 'classid'=>$classid ));
+            $this->queue_model->add_queue(self::Q_DETAIL, array('url'=>$url_info['url'], 'with_pic'=>$crawl_info['with_pic'], 'rule_id'=>$crawl_info['rule_id'], 'classid'=>$classid ));
             $insert_count++;
         }
         $this->relation_model->add_lastcount($crawl_info['_id'], $insert_count);
@@ -164,19 +164,13 @@ class Crontab extends CI_Controller {
             if(empty($crawl_info)){ sleep(2); continue; }
             else break;
         }
-        $insert_data = array();
+        $detail_info = $this->htmlparser->start($crawl_info['url'], 3, $crawl_info['with_pic'],  $crawl_info['rule_id']);
+        if(empty($detail_info['content'])) return false;
 
         list($usec, $sec) = explode(" ",microtime());
         $msec = intval($sec*1000000) + intval($usec*1000000);
 
-        $insert_data['created'] = $sec;
-        $insert_data['mcreated'] = $msec;
-
-        $detail_info = $this->htmlparser->start($crawl_info['url'], 3);
-
-        if(empty($detail_info['content'])) return false;
-
-        $insert_data['content'] = $detail_info['content'];
+        $insert_data = array('created'=>$sec, 'mcreated'=>$msec, 'content'=>$detail_info['content']);
 
         if(!empty($detail_info['title'])) $insert_data['title'] = $detail_info['title'];
 

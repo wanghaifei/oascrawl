@@ -69,12 +69,9 @@ class htmlparser {
         //抓取站点
         for ($i = 0; $i < 5; $i++) {
             $http_info = send_http(htmlspecialchars_decode($url));
-            if(! is_array($http_info)){
-                $this->html = $http_info;
-                break;
-            }
-            sleep(1);
+            if(is_array($http_info) || empty($http_info)) continue;
         }
+        $this->html = $http_info;
         if(empty($this->html)){ die('html is empty!'); }
         //获取站点编码
         preg_match('|charset=(.+?)"|ims', $this->html, $charset);
@@ -100,6 +97,7 @@ class htmlparser {
     {
         $this->_init($url);
         $this->html_type = $html_type;
+
         if (! in_array($this->html_type, $this->conf_html_type)) {
             error_log('error', 'type is error');
             return false;
@@ -497,7 +495,10 @@ class htmlparser {
                         $key_1 = $keyArr[0];
                         $key_2 = array_search($url_lists[$key_1], $url_lists);
                         $content_lists = array($key_2=>$content_lists[$key_2], $key_1=>$content_lists[$key_1]);
+                        //删除more链接
+                        if(! strstr($content_lists[$key_1], '<img ') && mb_strlen($content_lists[$key_1]) < 30) $html = str_replace($content_lists[$key_1], '', $html);
                     }
+
                     foreach ($content_lists as $key=>$content)
                     {
                         $temp_content = trim(strip_tags($content));
@@ -555,48 +556,92 @@ class htmlparser {
                         break;
                     }
                 }
-
                 //获取列表内图片最多的元素
                 if ($pic) {
                     foreach($lists as $key_1=>$info)
                     {
-                        if ($pic) {
-                            $pic_count = 0;
-                            foreach ($info as $val) {
-                                if(strstr($val['description'], '<img ')) $pic_count++;
-                            }
-                            $count[$key_1] = $pic_count;
+                        $pic_count = 0;
+                        foreach ($info as $val) {
+                            if(strstr($val['description'], '<img ')) $pic_count++;
                         }
+                        $count[$key_1] = $pic_count;
                     }
                     $pos = array_search(max($count), $count);
                     $data = $lists[$pos];
                 }
+
                 foreach ($data as $key => $info) {
-                    $data[$key]['description'] = $this->filter_lable($info['description'], 'a');
-                    $data[$key]['description'] = $this->pic_save($info['description']);
+                    $data[$key]['description'] = $this->get_valid_content($data[$key]['description']);
+                    !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
                 }
                 break;
 
             case 3:
-               if(in_array($lists[0]['title'], $this->filter_title)){
+               if(!empty($lists[0]['title']) && in_array($lists[0]['title'], $this->filter_title)){
                    return false;
                }else{
                    $data = $lists[0];
-                   $data['content'] = $this->filter_lable($data['content'], 'a');
-                   $data['content'] = $this->pic_save($data['content']);
+                   $data['content'] = $this->get_valid_content($data['content']);
+                   !empty($data['title']) && $data['title'] = $this->get_valid_title($data['title']);
                }
                break;
         }
         return $data;
     }
 
-    private function filter_lable($html, $lable)
+    /**
+     * 获取有效title
+     * @param $title
+     * @return mixed
+     */
+    private function get_valid_title($title)
     {
-        $html = str_replace('</'.$lable. '>', '', $html);
-        $html = preg_replace('|<'.$lable.' [^<]*?>|ims', '',$html);
+        $arr = array("\r\n", "\r", "\n", "\t", "<br>");
+        return str_replace($arr, " ", $title);
+    }
+
+    /**
+     * 获取有效的content, description
+     * @param $content
+     * @return mixed|string
+     */
+    private function get_valid_content($content)
+    {
+        $content = $this->filter_lable($content, array('a'));
+        //$content = str_replace(array('\r\n', '\r', '\n', '\t'), "", $content);
+        $content = str_replace(array("\r\n", "\r", "\n", "\t"), "", $content);
+
+        $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
+        foreach($filter_attr as $attr){
+            $content = preg_replace('| ('.$attr.'="[^<]*?")|ims', '', $content);
+        }
+        $content = $this->pic_save($content);
+/*        $content = strip_tags($content, '<img>');
+        $content = preg_replace('|<img .*?src="(.+?)".*?>|ims', '<img src="$1">', $content);*/
+
+        return trim($content);
+    }
+
+    /**
+     * 过滤标签
+     * @param $html
+     * @param $lable_lists
+     * @return mixed
+     */
+    private function filter_lable($html, $lable_lists)
+    {
+        foreach ($lable_lists as $lable) {
+            $html = str_replace('</'.$lable. '>', '', $html);
+            $html = preg_replace('|<'.$lable.' [^<]*?>|ims', '',$html);
+        }
         return $html;
     }
 
+    /**
+     * 保存图片
+     * @param $html
+     * @return mixed
+     */
     private function pic_save($html)
     {
         $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
@@ -616,6 +661,7 @@ class htmlparser {
     }
 
     /**
+     * 图片上传
      * @param $pic_url
      * @return mixed
      */
@@ -702,8 +748,9 @@ class htmlparser {
             foreach ($preg_rules as $rule) {
                 if(false != preg_match_all('|' . $rule . '|ims', $this->html, $url_lists)){
 
-                    foreach ($url_lists as $url) {
+                    foreach ($url_lists[1] as $url) {
                         $url = $this->add_host($url);
+
                         if (! strstr($url, '?')) continue;
 
                         list($url_real, $url_param) = explode('?', $url);
@@ -721,6 +768,7 @@ class htmlparser {
                 }
             }
         }
+
         //如果翻页url为空，或者抓取url存在于翻页url中（避免抓取到标签列表页），使用此规则
         if (empty($valid_url) || in_array($this->crawl_url, $valid_url))
         {

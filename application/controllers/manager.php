@@ -80,14 +80,10 @@ class Manager extends CI_Controller {
      * @param bool $pic
      * @param bool $pr_page
      */
-    public function tcrawl()
+    public function tcrawl($url, $http_type = 2, $with_pic = 0, $rule_id = 0, $pr_page = 0)
     {
         header("Content-type: text/html; charset=utf-8");
-        if (false == $url = $_GET['url']) die();
-        $type = !empty($_GET['type']) ? $_GET['type'] : 2;
-        $pr_page = !empty($_GET['pr_page']) ? true : false;
-
-        $lists = $this->htmlparser->start($url, $type, @$_GET['with_pic'], @$_GET['rule_id']);
+        $lists = $this->htmlparser->start(urldecode($url), $http_type, $with_pic, $rule_id);
         if ($pr_page) {
             $lists = $this->htmlparser->turn_page_url();
         }
