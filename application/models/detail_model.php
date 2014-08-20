@@ -200,13 +200,5 @@ class Detail_model extends CI_Model {
         return $this->mongo_db->update($this->detail_table, array('status'=>$status));
     }
 
-/*    private function switch_coll($classid)
-    {
-        $class_info = $this->class_model->findOne(array('classid'=>$classid));
-        $this->detail_table = $class_info['name'];
-
-        return $this->detail_table;
-    }*/
-
 }
 
