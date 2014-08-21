@@ -207,6 +207,5 @@ class Relation_model extends CI_Model {
         }
         return $this->mongo_db->update($this->tags_coll, array('lasttime'=>time()));
     }
-
 }
 

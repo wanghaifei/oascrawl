@@ -6,7 +6,6 @@ $config['class'] = array(1=>'humor');
 
 //tag、relation、detail可以为空数组, 如果为空则使用默认规则获取信息
 
-
 /*
 $config['rules'][1] = array(
     'id'=>1,

@@ -153,7 +153,6 @@ class Crontab extends CI_Controller {
         }
     }
 
-
     /**
      * 抓取详细信息
      */

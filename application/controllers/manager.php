@@ -34,6 +34,9 @@ class Manager extends CI_Controller {
         print_r($result);
     }
 
+    /**
+     * 增加feed
+     */
     public function add_feeds()
     {
 		//add(url, html_type, 添加的标签, 相关内容是否存在图片, 规则ID)

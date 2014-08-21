@@ -199,6 +199,5 @@ class Detail_model extends CI_Model {
 
         return $this->mongo_db->update($this->detail_table, array('status'=>$status));
     }
-
 }
 

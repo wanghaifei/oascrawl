@@ -799,6 +799,7 @@ class htmlparser {
         }
         return $valid_url;
     }
+
     /**
      * 增加域名
      * @param $url
