@@ -34,7 +34,7 @@ class htmlparser {
     private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
 
     /** 移除元素规则列表 @var array */
-    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<!--.*?-->');
+    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?></form>', '<!--.*?-->');
 
     /** 抓取页的相关信息 */
     private $html_type;        /** 抓取类型 @var int */
@@ -477,14 +477,9 @@ class htmlparser {
 
                     $html = trim(pq($dom_children)->eq($k));
 
-                    $replace = str_replace(' ', '', strip_tags($html, '<img>'));
-
-                    if(empty($replace) || strstr($html, '<iframe ') || strpos($html, '<a ') === 0){
-                        continue;
-                    }
-                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) {
-                        continue;
-                    }
+                    if(strstr($html, '<iframe ') || strpos($html, '<a ') === 0)continue;
+                    if(false == str_replace(' ', '', strip_tags($html, '<img>'))) continue;
+                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
 
                     $url_lists = $out[1];
                     $content_lists = $out[2];
@@ -542,19 +537,13 @@ class htmlparser {
                 break;
 
             case 2 :
-                //$data = $lists[0];
                 foreach($lists as $info){
                     $url_lists = array_column($info, 'url');
                     $description = implode('', array_column($info, 'description'));
                     //内容不能为空(不能只是链接地址)
-                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $description)))) {
-                        continue;
-                    }
+                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $description)))) continue;
                     //抓取url存在于列表中,则跳过
-                    if(! in_array($this->crawl_url, $url_lists)){
-                        $data = $info;
-                        break;
-                    }
+                    if(! in_array($this->crawl_url, $url_lists)){ $data = $info; break; }
                 }
                 //获取列表内图片最多的元素
                 if ($pic) {
@@ -569,7 +558,6 @@ class htmlparser {
                     $pos = array_search(max($count), $count);
                     $data = $lists[$pos];
                 }
-
                 foreach ($data as $key => $info) {
                     $data[$key]['description'] = $this->get_valid_content($data[$key]['description']);
                     !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
@@ -577,14 +565,15 @@ class htmlparser {
                 break;
 
             case 3:
-               if(!empty($lists[0]['title']) && in_array($lists[0]['title'], $this->filter_title)){
-                   return false;
-               }else{
-                   $data = $lists[0];
-                   $data['content'] = $this->get_valid_content($data['content']);
-                   !empty($data['title']) && $data['title'] = $this->get_valid_title($data['title']);
-               }
-               break;
+                foreach($lists as $info){
+                    if(!empty($info['title']) && in_array($info['title'], $this->filter_title)) continue;
+                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $info['content'])))) continue;
+                    $data = $info;
+                }
+                $data['content'] = $this->get_valid_content($data['content']);
+                !empty($data['title']) && $data['title'] = $this->get_valid_title($data['title']);
+
+                break;
         }
         return $data;
     }
