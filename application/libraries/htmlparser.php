@@ -7,8 +7,9 @@
  */
 
 define('UPLOADFILE', 'http://www.komiksurat.com/upload.php');
-
-require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
+//phpQuery.php 文件存在编码问题
+//require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery.php';
+require_once dirname(__FILE__).'/phpQuery/phpQuery/phpQuery-onefile-ipatched.php';
 
 class htmlparser {
     /** 当前编码 @var string */
@@ -81,7 +82,8 @@ class htmlparser {
         foreach ($this->dom_filter_rules as $rule) {
             $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
         }
-        $this->html = mb_convert_encoding($this->html, $this->charset, $this->html_charset);
+        if(str_replace('-','',$this->html_charset) != str_replace('-','',$this->charset))
+            $this->html = mb_convert_encoding($this->html, $this->charset, $this->html_charset);
         //phpquery 初始化
         phpQuery::$defaultCharset = $this->charset;
         phpquery::newDocumentHTML($this->html);
@@ -119,7 +121,7 @@ class htmlparser {
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
 
         //测试
-       //$this->test($score_lists);
+        //$this->test($score_lists);
 
         $info_lists = array();
         //获取每个标签内有效的子标签列表，并转化编码
