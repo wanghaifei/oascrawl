@@ -108,6 +108,7 @@ class Api extends CI_Controller {
         if(empty($_GET['title']) || empty($data) || count($data) > 1){
             $data = $this->detail_model->find(array('content'=>urldecode($_GET['content'])));
         }
+        
 /*        $this->detail_model->setTableName('humor');
 
         $data = $this->detail_model->findOneByID($data[0]['_id']);*/
