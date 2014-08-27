@@ -74,14 +74,15 @@ class htmlparser {
         }
         $this->html = $http_info;
         if(empty($this->html)){ die('html is empty!'); }
-        //获取站点编码
-        preg_match('|charset=(.+?)"|ims', $this->html, $charset);
 
-        $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
         //过滤干扰标签
         foreach ($this->dom_filter_rules as $rule) {
             $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
         }
+        //获取站点编码
+        preg_match('|charset=(.+?)"|ims', $this->html, $charset);
+        $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
+        //编码转换
         if(str_replace('-','',$this->html_charset) != str_replace('-','',$this->charset))
             $this->html = mb_convert_encoding($this->html, $this->charset, $this->html_charset);
         //phpquery 初始化
