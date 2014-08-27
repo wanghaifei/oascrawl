@@ -100,7 +100,7 @@ class Api extends CI_Controller {
     public function repair()
     {
         $this->load->model('detail_model');
-        $this->detail_model->setTableName('humor_bak');
+        $this->detail_model->setTableName('humor');
 
         if(!empty($_GET['title'])){
             $data = $this->detail_model->find(array('title'=>urldecode($_GET['title'])));
@@ -109,11 +109,11 @@ class Api extends CI_Controller {
             $data = $this->detail_model->find(array('content'=>urldecode($_GET['content'])));
         }
 
-        $this->detail_model->setTableName('humor');
+/*        $this->detail_model->setTableName('humor');
 
-        $data = $this->detail_model->findOneByID($data[0]['_id']);
+        $data = $this->detail_model->findOneByID($data[0]['_id']);*/
 
-        echo json_encode($data);
+        echo json_encode($data[0]);
     }
 
 }
