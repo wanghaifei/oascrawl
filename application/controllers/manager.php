@@ -64,7 +64,6 @@ class Manager extends CI_Controller {
      */
     public function stat_cache()
     {
-
         header("Content-type: text/html; charset=utf-8");
 
         if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
