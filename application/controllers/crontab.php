@@ -248,11 +248,13 @@ class Crontab extends CI_Controller {
                         foreach($img_src[1] as $pic_url){
                             $pic_url = urlencode($pic_url);
                             $pic_info= json_decode(send_http(UPLOADFILE . '?url='. $pic_url), true);
-                            $width[] = $pic_info['width'];
+                            if(is_numeric($pic_info['width']) && $pic_info['width'] > 0) $width[] = $pic_info['width'];
                         }
-                        $t = max($width);
-                        $brr = array_flip($width);
-                        $detail_info['pic_url'] = $img_src[1][$brr[$t]];
+                        if($width){
+                            $t = max($width);
+                            $brr = array_flip($width);
+                            $detail_info['pic_url'] = $img_src[1][$brr[$t]];
+                        }
                     }else{
                         $detail_info['pic_url'] = $img_src[1][0];
                     }

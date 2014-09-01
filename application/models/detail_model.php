@@ -73,12 +73,14 @@ class Detail_model extends CI_Model {
      * @return mixed
      */
 
-    public function findByLtMs($previous_cursor, $status = 1, $limit = 20)
+    public function findByLtMs($previous_cursor, $status = 1, $with_pic, $limit = 20)
     {
-        $this->mongo_db->limit($limit);
-        $this->mongo_db->order_by(array('mcreated'));
         $this->mongo_db->where(array('status'=>$status));
         $this->mongo_db->where_lt('mcreated', $previous_cursor);
+        !empty($with_pic) && $this->mongo_db->where(array('with_pic'=>1));
+
+        $this->mongo_db->limit($limit);
+        $this->mongo_db->order_by(array('mcreated'));
 
         return $this->mongo_db->get($this->detail_table);
     }
@@ -90,12 +92,14 @@ class Detail_model extends CI_Model {
      * @param $limit
      * @return mixed
      */
-    public function findByGtMs($next_cursor, $status = 1, $limit = 20)
+    public function findByGtMs($next_cursor, $status = 1, $with_pic, $limit = 20)
     {
-        $this->mongo_db->limit($limit);
-        $this->mongo_db->where(array('status'=>$status));
         $this->mongo_db->order_by(array('mcreated'=>1));
         $this->mongo_db->where_gt('mcreated', floatval($next_cursor));
+        !empty($with_pic) && $this->mongo_db->where(array('with_pic'=>1));
+
+        $this->mongo_db->limit($limit);
+        $this->mongo_db->where(array('status'=>$status));
 
         return $this->mongo_db->get($this->detail_table);
     }

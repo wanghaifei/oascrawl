@@ -32,13 +32,13 @@ class Api extends CI_Controller {
      * @param int $limit 返回数目
      * @usage : next_cursor('humor', 1405385114351, 20)
      */
-    public function next_cursor($coll, $next_cursor = 0, $limit = 20){
+    public function next_cursor($coll, $next_cursor = 0, $limit = 20, $with_pic = false){
 
         $this->load->model('detail_model');
 
         $this->detail_model->setTableName($coll);
 
-        $results = $this->detail_model->findByGtMs($next_cursor, $status = 1,  $limit);
+        $results = $this->detail_model->findByGtMs($next_cursor, $status = 1, $with_pic, $limit);
 
         $this->response($results, $limit);
     }
@@ -49,13 +49,13 @@ class Api extends CI_Controller {
      * @param int $limit 返回数目
      * @usage : next_cursor('humor', 1405385114.351, 20)
      */
-    public function previous_cursor($coll, $previous_cursor =0, $limit = 20)
+    public function previous_cursor($coll, $previous_cursor =0, $limit = 20, $with_pic = false)
     {
         $this->load->model('detail_model');
 
         $this->detail_model->setTableName($coll);
 
-        $results = $this->detail_model->findByLtMs($previous_cursor, $status = 1, $limit);
+        $results = $this->detail_model->findByLtMs($previous_cursor, $status = 1, $with_pic, $limit);
 
         $this->response($results, $limit);
     }
