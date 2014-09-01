@@ -222,7 +222,6 @@ class Crontab extends CI_Controller {
             '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="rightArrow" class="imageArrow"><img class="right" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
             '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="leftArrow" class="imageArrow"><img class="left" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
         );
-
         $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
 
         $this->detail_model->setTableName('humor');
