@@ -255,6 +255,9 @@ class Crontab extends CI_Controller {
                         $detail_info['pic_url'] = $img_src[1][0];
                     }
                 }
+
+                if(empty($detail_info['pic_url'])) $detail_info['pic_url'] = '';
+
                 $id = $detail_info['_id'];
                 unset($detail_info['_id']);
                 $this->detail_model->update($id, $detail_info);
