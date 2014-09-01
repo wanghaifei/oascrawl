@@ -215,6 +215,51 @@ class Crontab extends CI_Controller {
             }
         }
     }
+
+    function filter_lable()
+    {
+        $filter_str = array(
+            '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="rightArrow" class="imageArrow"><img class="right" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
+            '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="leftArrow" class="imageArrow"><img class="left" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
+        );
+
+        $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
+
+        $this->detail_model->setTableName('humor');
+
+        if($data = $this->detail_model->find(array('with_pic'=>1,'pic_url'=>array('$exists'=>false)), 0, 50))
+        {
+            foreach ($data as $detail_info)
+            {
+                foreach ($filter_str as $str) {
+                    $detail_info['content'] = str_replace($str, '', $detail_info['content']);
+                }
+                foreach($filter_attr as $attr){
+                    $detail_info['content'] = preg_replace('| ('.$attr.'="[^<]*?")|ims', '', $detail_info['content']);
+                    $detail_info['description'] = preg_replace('| ('.$attr.'="[^<]*?")|ims', '', $detail_info['description']);
+                }
+
+                if(preg_match_all('|<img .*?src="(.*?)"|ims', $detail_info['content'], $img_src)){
+                    if(count($img_src[1]) > 1){
+                        $width = array();
+                        foreach($img_src[1] as $pic_url){
+                            $pic_url = urlencode($pic_url);
+                            $pic_info= json_decode(send_http(UPLOADFILE . '?url='. $pic_url), true);
+                            $width[] = $pic_info['width'];
+                        }
+                        $t = max($width);
+                        $brr = array_flip($width);
+                        $detail_info['pic_url'] = $img_src[1][$brr[$t]];
+                    }else{
+                        $detail_info['pic_url'] = $img_src[1][0];
+                    }
+                }
+                $id = $detail_info['_id'];
+                unset($detail_info['_id']);
+                $this->detail_model->update($id, $detail_info);
+            }
+        }
+    }
 }
 
 /* End of file welcome.php */

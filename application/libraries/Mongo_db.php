@@ -417,7 +417,14 @@ class Mongo_db {
 		$this->wheres[$field]['$ne'] = $x;
 		return ($this);
 	}
-	
+
+
+    function where_exists($field = '', $is_exists = true){
+        $this->_where_init($field);
+        $this->wheres[$field]['$exists'] = $is_exists;
+        return ($this);
+    }
+
 	/**
 	*	--------------------------------------------------------------------------------
 	*	WHERE NOT EQUAL TO PARAMETERS
