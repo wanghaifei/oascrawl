@@ -224,6 +224,8 @@ class Crontab extends CI_Controller {
         );
         $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
 
+        $this->load->model('detail_model');
+
         $this->detail_model->setTableName('humor');
 
         if($data = $this->detail_model->find(array('with_pic'=>1,'pic_url'=>array('$exists'=>false)), 0, 50))
@@ -255,6 +257,9 @@ class Crontab extends CI_Controller {
                 }
                 $id = $detail_info['_id'];
                 unset($detail_info['_id']);
+
+                print_r($detail_info);exit;
+
                 $this->detail_model->update($id, $detail_info);
             }
         }
