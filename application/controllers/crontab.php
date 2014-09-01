@@ -257,7 +257,6 @@ class Crontab extends CI_Controller {
                 }
                 $id = $detail_info['_id'];
                 unset($detail_info['_id']);
-
                 $this->detail_model->update($id, $detail_info);
 
                 echo $id."<br>";
