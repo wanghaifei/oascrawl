@@ -221,14 +221,16 @@ class Crontab extends CI_Controller {
         $filter_str = array(
             '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="rightArrow" class="imageArrow"><img class="right" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
             '<div onmouseout="CT.positionArrows(\'imageContent\',false);" onmouseover="CT.positionArrows(\'imageContent\',true);" id="leftArrow" class="imageArrow"><img class="left" width="64" height="64" src="http://www.komiksurat.com/imagedb/162/143/119/134/e.png"></div>',
+            '<img src="http://www.komiksurat.com/imagedb/158/124/130/151/e.png">',
         );
+
         $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
 
         $this->load->model('detail_model');
 
         $this->detail_model->setTableName('humor');
 
-        if($data = $this->detail_model->find(array('with_pic'=>1,'pic_url'=>array('$exists'=>false)), 0, 50))
+        if($data = $this->detail_model->find(array('status'=>1, 'with_pic'=>1,'pic_url'=>array('$exists'=>false)), 0, 50))
         {
             foreach ($data as $detail_info)
             {
