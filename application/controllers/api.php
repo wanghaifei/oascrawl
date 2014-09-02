@@ -30,9 +30,10 @@ class Api extends CI_Controller {
      * @param $coll 要查找的集合
      * @param int $next_cursor 毫秒
      * @param int $limit 返回数目
+     * @param int $with_pic: 0-全部  1-图片  2-段子
      * @usage : next_cursor('humor', 1405385114351, 20)
      */
-    public function next_cursor($coll, $next_cursor = 0, $limit = 20, $with_pic = false){
+    public function next_cursor($coll, $next_cursor = 0, $limit = 20, $with_pic = 0){
 
         $this->load->model('detail_model');
 
@@ -47,9 +48,10 @@ class Api extends CI_Controller {
      * @param $coll 要查找的集合
      * @param int $previous_cursor 毫秒
      * @param int $limit 返回数目
+     * @param int $with_pic: 0-全部  1-图片  2-段子
      * @usage : next_cursor('humor', 1405385114.351, 20)
      */
-    public function previous_cursor($coll, $previous_cursor =0, $limit = 20, $with_pic = false)
+    public function previous_cursor($coll, $previous_cursor =0, $limit = 20, $with_pic = 0)
     {
         $this->load->model('detail_model');
 
