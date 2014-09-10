@@ -34,7 +34,7 @@ class Api extends CI_Controller {
      * @param int $with_pic: 0-全部  1-图片  2-段子
      * @usage : next_cursor('humor', 1405385114351, 20)
      */
-    public function next_cursor($coll, $next_cursor = 0, $limit = 20, $with_pic = 0){
+    public function next_cursor($coll, $next_cursor = 0, $limit = 20, $with_pic = 0, $format = 'json'){
 
         $this->load->model('detail_model');
 
@@ -42,7 +42,7 @@ class Api extends CI_Controller {
 
         $results = $this->detail_model->findByGtMs($next_cursor, $status = 1, $with_pic, $limit);
 
-        $this->response($results, $limit);
+        $this->response($results, $limit, $format);
     }
 
     /**
@@ -52,7 +52,7 @@ class Api extends CI_Controller {
      * @param int $with_pic: 0-全部  1-图片  2-段子
      * @usage : next_cursor('humor', 1405385114.351, 20)
      */
-    public function previous_cursor($coll, $previous_cursor =0, $limit = 20, $with_pic = 0)
+    public function previous_cursor($coll, $previous_cursor =0, $limit = 20, $with_pic = 0, $format = 'json')
     {
         $this->load->model('detail_model');
 
@@ -60,7 +60,7 @@ class Api extends CI_Controller {
 
         $results = $this->detail_model->findByLtMs($previous_cursor, $status = 1, $with_pic, $limit);
 
-        $this->response($results, $limit);
+        $this->response($results, $limit, $format);
     }
 
     /**
@@ -68,7 +68,7 @@ class Api extends CI_Controller {
      * @param $data
      * @param $limit
      */
-    private function response($data, $limit)
+    private function response($data, $limit, $format)
     {
         $respose = array('data'=>array(), 'hasvisible'=>false, 'previous_cursor'=>0, 'next_cursor'=>0, 'total_number'=>0);
 
@@ -83,7 +83,9 @@ class Api extends CI_Controller {
             $respose['next_cursor'] = $data[$count-1]['mcreated'];
             $respose['total_number'] = $count;
         }
-        echo arrtoxml($respose);
+
+        echo  ($format == 'xml') ? arrtoxml($respose) : json_encode($respose);
+
 //        $string =  arrtoxml($respose);
 //        $xml = simplexml_load_string($string);
 //        print_r($xml);
