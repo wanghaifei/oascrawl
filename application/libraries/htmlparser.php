@@ -573,7 +573,17 @@ class htmlparser {
                 foreach ($data as $key => $info) {
                     $description = $data[$key]['description'];
                     unset($data[$key]['description']);
-                    $data[$key]['description']['pics'] = $this->get_valid_pic_url($description);
+
+                    $pic_info_lists =  $data[$key]['description']['pics'] = $this->get_valid_pic_url($description);
+                    if($pic){
+                        if (!empty($pic_info_lists)) {
+                            $pic_info_lists = array_sort($pic_info_lists, 'width');
+                            if($pic_info_lists[0]['width'] < 100) return false;
+                        }else{
+                            return false;
+                        }
+                    }
+
                     $data[$key]['description']['words'] = $this->get_content_words($description);
                     !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
                 }
