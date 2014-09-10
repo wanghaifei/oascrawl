@@ -18,6 +18,7 @@ class Detail_model extends CI_Model {
      * tags:  该标签所属标签列表。
      * status : -1 删除, 0 抓取未完成, 1 抓取完成
      * with_pic : 内容是否是图片。1 ：存在， 0： 不存在
+     * pic : 图片数组
      * title: 标题
      * description: 描述,缩率信息
      * content: 主要内容.

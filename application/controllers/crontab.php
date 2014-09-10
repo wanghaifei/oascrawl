@@ -122,7 +122,7 @@ class Crontab extends CI_Controller {
         $insert_count = 0;
         foreach ((array)$relation_lists as $url_info) {
 
-            if ($this->detail_model->findOneByUrl($url_info['url'])) {
+            if ($this->detail_model->findOneByUrl($url_info['url']) || empty($url_info['description'])) {
                 continue;
             }
             $data['title'] = $url_info['title'];

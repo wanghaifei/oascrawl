@@ -6,6 +6,7 @@ class Api extends CI_Controller {
 
     function __construct() {
         parent::__construct();
+        $this->load->helper('global');
     }
 
     /**
@@ -82,8 +83,10 @@ class Api extends CI_Controller {
             $respose['next_cursor'] = $data[$count-1]['mcreated'];
             $respose['total_number'] = $count;
         }
-
-        echo json_encode($respose);
+        echo arrtoxml($respose);
+//        $string =  arrtoxml($respose);
+//        $xml = simplexml_load_string($string);
+//        print_r($xml);
     }
     /**
      * 调试

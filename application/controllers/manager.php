@@ -40,11 +40,11 @@ class Manager extends CI_Controller {
     public function add_feeds()
     {
 		//add(url, html_type, 添加的标签, 相关内容是否存在图片, 规则ID)
-        $this->feeds_model->add('http://www.999gag.com/en/tag', 1, array(), 1, 0);
+        //$this->feeds_model->add('http://www.999gag.com/en/tag', 1, array(), 1, 0);
         $this->feeds_model->add('http://www.komikdunya.com/komikresimler/', 1, array(), 1, 0);
-        $this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 0);
+        //$this->feeds_model->add('http://www.komikdunya.com/karikaturler/', 1, array(), 1, 0);
         //$this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array(), 1, 0);
-        $this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
+        //$this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
     }
 
     /**

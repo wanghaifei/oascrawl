@@ -35,7 +35,7 @@ class htmlparser {
     private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
 
     /** 移除元素规则列表 @var array */
-    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?></form>', '<!--.*?-->');
+    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?</form>', '<!--.*?-->');
 
     /** 抓取页的相关信息 */
     private $html_type;        /** 抓取类型 @var int */
@@ -45,7 +45,11 @@ class htmlparser {
     private $crawl_url;        /** 所要抓取的url @var  string*/
     private $html_charset;     /** 抓取到的页面编码 @var string */
     private $score = array(); /** 标签lable信息 @var array*/
+    private $html_pic_url = array(); /** 页面的图片信息 */
 
+    private $lable_rules = array(
+        'a'=> array('<a [^<>]*?href="([^javascript].+?)".*?>(.*?)</a>', '<a [^<>]*?onclick="window.location=\'(.+?)\'".*?>(.*?)</a>'),
+    );
     /**
      * 构造函数
      */
@@ -54,6 +58,8 @@ class htmlparser {
         $this->_ci = get_instance();
         $this->_ci->load->helper('global');
         $this->_ci->config->load('parser_rules');
+
+        $this->_ci->load->model('log_model');
     }
 
     /**
@@ -68,13 +74,19 @@ class htmlparser {
             $this->host = $url_info['scheme'].'://'.$url_info['host'];
         }
         //抓取站点
-        for ($i = 0; $i < 5; $i++) {
-            $http_info = send_http(htmlspecialchars_decode($url));
-            if(is_array($http_info) || empty($http_info)) continue;
-        }
-        $this->html = $http_info;
-        if(empty($this->html)){ die('html is empty!'); }
+        $re_count = 3;
+        for ($i = 1; $i <= $re_count; $i++)
+        {
+            $this->html = send_http(htmlspecialchars_decode($url));
 
+            if(is_array($this->html) || empty($this->html)) {
+                if($i < $re_count) continue;
+                else {
+                    if($error_id = $this->get_error($this->html)) $this->_ci->log_model->record($url, $this->html, $error_id);
+                    return false;
+                }
+            }
+        }
         //过滤干扰标签
         foreach ($this->dom_filter_rules as $rule) {
             $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
@@ -85,9 +97,11 @@ class htmlparser {
         //编码转换
         if(str_replace('-','',$this->html_charset) != str_replace('-','',$this->charset))
             $this->html = mb_convert_encoding($this->html, $this->charset, $this->html_charset);
+
         //phpquery 初始化
         phpQuery::$defaultCharset = $this->charset;
         phpquery::newDocumentHTML($this->html);
+        return true;
     }
 
     /**
@@ -98,13 +112,8 @@ class htmlparser {
      */
     public function start($url, $html_type = 1, $with_pic = true, $rule_id = 0)
     {
-        $this->_init($url);
         $this->html_type = $html_type;
-
-        if (! in_array($this->html_type, $this->conf_html_type)) {
-            error_log('error', 'type is error');
-            return false;
-        }
+        if(false == $this->_init($url)) return false;
         //通过配置文件规则获取信息
         if(true == $data = $this->results_byrule($rule_id, $with_pic)){
             return $data;
@@ -114,16 +123,17 @@ class htmlparser {
         if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
             $dom_lists = array('body');
         }
+        $this->html = $this->filter_lable($this->html, array('style'));
+        phpquery::newDocumentHTML($this->html);
+
         //获取每个标签的分数
         foreach ($dom_lists as $dom) {
             $this->calculate_dom_score($dom);
         }
         //截取分数最高的10个标签
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
-
         //测试
         //$this->test($score_lists);
-
         $info_lists = array();
         //获取每个标签内有效的子标签列表，并转化编码
         foreach($score_lists as $score_info){
@@ -201,8 +211,8 @@ class htmlparser {
 
         for ($k = 0; $k < count($dom_children); $k++) {
             $html = pq($dom_children)->eq($k);
-            //如果存在<iframe 或没有图片或没有内容则忽略
-            if(strstr($html, '<iframe ') || ! strip_tags($html, '<img>')) continue;
+            //没有图片或没有内容则忽略
+            if( ! strip_tags($html, '<img>')) continue;
             //去除所有的text
             $html = preg_replace('/(?<=[>])[^<>]+?(?=[<])/is', '', $html);
             $html = preg_replace('|<a .*?>|ims', '<a>', $html);
@@ -392,7 +402,7 @@ class htmlparser {
         //下载图片计算高宽
         if ($currentScore === 0) {
             if(preg_match('|<img .*?src="(.*?)"|ims', $html, $img_src)){
-                $pic_info = $this->pic_upload($this->add_host($img_src[1]));
+                $pic_info = $this->get_pic_info($img_src[1]);
                 if(!empty($pic_info['width'])) $currentScore += $pic_info['width'];
             }
         }
@@ -479,8 +489,7 @@ class htmlparser {
                 for ($k = 0; $k < count($dom_children); $k++) {
 
                     $html = trim(pq($dom_children)->eq($k));
-
-                    if(strstr($html, '<iframe ') || strpos($html, '<a ') === 0)continue;
+                    //if(strpos($html, '<a ') === 0)continue;
                     if(false == str_replace(' ', '', strip_tags($html, '<img>'))) continue;
                     if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
 
@@ -562,7 +571,10 @@ class htmlparser {
                     $data = $lists[$pos];
                 }
                 foreach ($data as $key => $info) {
-                    $data[$key]['description'] = $this->get_valid_content($data[$key]['description']);
+                    $description = $data[$key]['description'];
+                    unset($data[$key]['description']);
+                    $data[$key]['description']['pics'] = $this->get_valid_pic_url($description);
+                    $data[$key]['description']['words'] = $this->get_content_words($description);
                     !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
                 }
                 break;
@@ -572,13 +584,42 @@ class htmlparser {
                     if(!empty($info['title']) && in_array($info['title'], $this->filter_title)) continue;
                     if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $info['content'])))) continue;
                     $data = $info;
+                    break;
                 }
-                $data['content'] = $this->get_valid_content($data['content']);
+
+                $content = $data['content'];
+                unset($data['content']);
+
+                $pic_info_lists = $data['content']['pics'] = $this->get_valid_pic_url($content);
+                if($pic){
+                    if (!empty($pic_info_lists)) {
+                        $pic_info_lists = array_sort($pic_info_lists, 'width');
+                        if($pic_info_lists[0]['width'] < 200) return false;
+                    }else{
+                        return false;
+                    }
+                }
+
+                $data['content']['words'] = $this->get_content_words($content);
                 !empty($data['title']) && $data['title'] = $this->get_valid_title($data['title']);
 
                 break;
         }
         return $data;
+    }
+
+    private function get_valid_pic_url($content)
+    {
+        $pic_info_lists = array();
+        if(preg_match_all('|<img .*?src="(.*?)"|ims', $content, $img_src)){
+
+            foreach($img_src[1] as $pic_url){
+                $pic_info = $this->get_pic_info($pic_url);
+                if(is_numeric($pic_info['width']) && $pic_info['width'] > 1) $pic_info_lists[] = $pic_info;
+            }
+
+        }
+        return $pic_info_lists;
     }
 
     /**
@@ -589,7 +630,7 @@ class htmlparser {
     private function get_valid_title($title)
     {
         $arr = array("\r\n", "\r", "\n", "\t", "<br>");
-        return str_replace($arr, " ", $title);
+        return str_replace($arr, " ", strip_tags($title));
     }
 
     /**
@@ -597,21 +638,42 @@ class htmlparser {
      * @param $content
      * @return mixed|string
      */
-    private function get_valid_content($content)
+    private function get_content_words($content)
     {
         $content = $this->filter_lable($content, array('a'));
-        //$content = str_replace(array('\r\n', '\r', '\n', '\t'), "", $content);
+
+        $content = strip_tags($content, '<ul><li><br><p>');
         $content = str_replace(array("\r\n", "\r", "\n", "\t"), "", $content);
 
+        //去除标签属性
         $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
         foreach($filter_attr as $attr){
             $content = preg_replace('| ('.$attr.'="[^<]*?")|ims', '', $content);
         }
-        $content = $this->pic_save($content);
-/*        $content = strip_tags($content, '<img>');
-        $content = preg_replace('|<img .*?src="(.+?)".*?>|ims', '<img src="$1">', $content);*/
+        //保存图片，并替换图片地址
+/*        if(preg_match_all('|<img .*?src="(.*?)"|ims', $content, $img_src))
+        {
+            foreach ($img_src[1] as $src_info) {
+                $pic_info = $this->get_pic_info($src_info);
 
+                if(!empty($pic_info['width']) && $pic_info['width'] > 0) $content = str_replace($src_info, $pic_info['url'], $content);
+                else $content = preg_replace('|<img .*?src="'.$src_info.'".*?>|ims', '', $content);
+
+                if($error_id = get_error($src_info)) $this->log_model->record($src_info, $pic_info, $error_id);
+            }
+        }*/
         return trim($content);
+    }
+
+    private function get_error($repose_info){
+        $error_id = 0;
+
+        if(empty($repose_info)) $error_id = IS_EMPTY;
+        elseif(isset($http_info['http_code'])) $error_id = ERROR_PAGE;
+        elseif($this->html_type == 3 && !empty($repose_info['width']) && $repose_info['width'] <= 200) $error_id = IMG_SIZE_SMALL;
+
+        return $error_id;
+
     }
 
     /**
@@ -624,44 +686,27 @@ class htmlparser {
     {
         foreach ($lable_lists as $lable) {
             $html = str_replace('</'.$lable. '>', '', $html);
-            $html = preg_replace('|<'.$lable.' [^<]*?>|ims', '',$html);
+            $html = preg_replace('|<'.$lable. '[^<]*?>|ims', '',$html);
         }
         return $html;
     }
 
-    /**
-     * 保存图片
-     * @param $html
-     * @return mixed
-     */
-    private function pic_save($html)
-    {
-        $allowExt = array('.jpg','.jpeg','.png','.gif','.bmp');
+    public function get_pic_info($pic_url){
 
-        //保存图片，并替换图片地址
-        if(preg_match_all('|<img .*?src="(.*?)"|ims', $html, $img_src)){
-            foreach ($img_src[1] as $src_info) {
-                $ext = substr(strrchr($src_info, '.'), 0);
-                if(in_array($ext , $allowExt)){
-                    $pic_info = $this->pic_upload($this->add_host($src_info));
-                    if(!empty($pic_info['url'])) $html = str_replace($src_info, $pic_info['url'], $html);
-                }
-            }
+        $pic_url = $this->add_host($pic_url);
+        if(isset($this->html_pic_url[$pic_url])){
+            return $this->html_pic_url[$pic_url];
         }
 
-        return $html;
-    }
+        $pic_info= send_http(UPLOADFILE . '?url='. urlencode($pic_url));
+        $pic_info = json_decode($pic_info, true);
 
-    /**
-     * 图片上传
-     * @param $pic_url
-     * @return mixed
-     */
-    private function pic_upload($pic_url)
-    {
-        $pic_url = urlencode($pic_url);
-        $pic_info= send_http(UPLOADFILE . '?url='. $pic_url);
-        return json_decode($pic_info, true);
+        $this->html_pic_url[$pic_url] = $pic_info;
+
+        if($error_id = $this->get_error($this->html)) $this->_ci->log_model->record($pic_url, $pic_info, $error_id);
+
+        return $pic_info;
+
     }
 
     /**
@@ -756,7 +801,6 @@ class htmlparser {
                         if(count($param_intersect) != count($crawl_param_arr)) continue;
                         $valid_url[] = $url;
                     }
-
                 }
             }
         }
