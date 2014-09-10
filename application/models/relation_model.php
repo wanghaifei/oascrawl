@@ -117,7 +117,7 @@ class Relation_model extends CI_Model {
     public function add($pid, $url, $tags, $with_pic, $classid, $rule_id = 0)
     {
         $tagurl_info = array(
-            '_id' => md5($url), 'pid'=>$pid, 'url' => $url, 'created' => time(), 'lasttime' => 0, 'nexttime' => 0, 'status' => 0,'tags' => $tags, 'with_pic'=>$with_pic, 'classid' => $classid, 'rule_id' => $rule_id
+            '_id' => md5($url), 'pid'=>$pid, 'url' => $url, 'created' => time(), 'lasttime' => 0, 'nexttime' => 0, 'lastcount'=>0, 'status' => 0, 'tags' => $tags, 'with_pic'=>$with_pic, 'classid' => $classid, 'rule_id' => $rule_id
         );
         return $this->mongo_db->insert($this->tags_coll, $tagurl_info);
     }
