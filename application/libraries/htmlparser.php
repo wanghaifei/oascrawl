@@ -594,7 +594,7 @@ class htmlparser {
                 if($pic){
                     if (!empty($pic_info_lists)) {
                         $pic_info_lists = array_sort($pic_info_lists, 'width');
-                        if($pic_info_lists[0]['width'] < 200) return false;
+                        if($pic_info_lists[0]['width'] < 250) return false;
                     }else{
                         return false;
                     }
