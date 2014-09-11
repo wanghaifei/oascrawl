@@ -208,7 +208,6 @@ class Crontab extends CI_Controller {
             {
                 if($status === 0){
                     $crawl_info['url'] = $url;
-                    print_r($crawl_info);exit;
                     $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
                     $this->relation_model->update_lasttime($crawl_info['_id']);
                 }
