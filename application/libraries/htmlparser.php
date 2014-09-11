@@ -50,6 +50,7 @@ class htmlparser {
     private $lable_rules = array(
         'a'=> array('<a [^<>]*?href="([^javascript].+?)".*?>(.*?)</a>', '<a [^<>]*?onclick="window.location=\'(.+?)\'".*?>(.*?)</a>'),
     );
+
     /**
      * 构造函数
      */
@@ -113,6 +114,7 @@ class htmlparser {
     public function start($url, $html_type = 1, $with_pic = true, $rule_id = 0)
     {
         $this->html_type = $html_type;
+
         if(false == $this->_init($url)) return false;
         //通过配置文件规则获取信息
         if(true == $data = $this->results_byrule($rule_id, $with_pic)){
@@ -587,6 +589,7 @@ class htmlparser {
                     $data[$key]['description']['words'] = $this->get_content_words($description);
                     !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
                 }
+
                 break;
 
             case 3:

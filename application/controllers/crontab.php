@@ -100,6 +100,7 @@ class Crontab extends CI_Controller {
             if(empty($crawl_info)){ sleep(2); continue; }
             else break;
         }
+        print_r($crawl_info);
         $classid = $crawl_info['classid'];
 
         $cachekey = $crawl_info['cachekey'];
