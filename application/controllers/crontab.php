@@ -78,6 +78,8 @@ class Crontab extends CI_Controller {
             $this->relation_model->update_lasttime($info['_id']);
             //更改抓取状态为正在抓取
             $this->relation_model->update_status($info['_id'], 1);
+            //上次抓取数初始化为0
+            $this->relation_model->add_lastcount($info['_id'], 0, true);
 
             $info['cachekey'] = $info['url'];
 
@@ -103,12 +105,6 @@ class Crontab extends CI_Controller {
         $classid = $crawl_info['classid'];
 
         $cachekey = $crawl_info['cachekey'];
-
-        $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $cachekey);
-
-        $crawl_url_lists[$crawl_info['url']] = 1;
-
-        $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
 
         $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic'],  $crawl_info['rule_id']);
         $url_pages = $this->htmlparser->turn_page_url();
@@ -136,21 +132,22 @@ class Crontab extends CI_Controller {
         }
         $this->relation_model->add_lastcount($crawl_info['_id'], $insert_count);
 
+        //改变抓取状态
+        $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $cachekey);
+        $crawl_url_lists[$crawl_info['url']] = 1;
+
         //如果抓取到的新数据少于20%， 则不抓取下一页
-        if ($insert_count / count($relation_lists) * 100 < 20) {
-            return false;
+        if ($insert_count / count($relation_lists) * 100 >= 20){
+            foreach ((array)$url_pages as $url)
+            {
+                if(in_array($url, array_keys($crawl_url_lists))) continue;
+
+                $crawl_info['url'] = $url;
+                $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
+                $crawl_url_lists[$url] = 0;
+            }
         }
-
-        foreach ((array)$url_pages as $url)
-        {
-            if(in_array($url, array_keys($crawl_url_lists))) continue;
-
-            $crawl_info['url'] = $url;
-            $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
-
-            $crawl_url_lists[$url] = 0;
-            $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
-        }
+        $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
     }
 
     /**
@@ -185,7 +182,6 @@ class Crontab extends CI_Controller {
 
         $this->detail_model->updateStatus($detail['_id'], 1);
     }
-
 
     /**
      * 不在队列中也没抓取过的信息进行抓取

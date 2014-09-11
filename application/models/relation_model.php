@@ -138,9 +138,13 @@ class Relation_model extends CI_Model {
      * @param $count
      * @return mixed
      */
-    public function add_lastcount($id , $count)
+    public function add_lastcount($id , $count, $init = false)
     {
         $this->mongo_db->where(array('_id'=>$id));
+        /** 初始化下次抓取时间 */
+        if ($init) {
+            return $this->mongo_db->update($this->tags_coll, array('lastcount'=>0));
+        }
         return $this->mongo_db->update($this->tags_coll, array('lastcount'=>$count), array(), '$inc');
     }
 
