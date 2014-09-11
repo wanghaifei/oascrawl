@@ -114,6 +114,15 @@ class Relation_model extends CI_Model {
         return $this->mongo_db->get($this->tags_coll);
     }
 
+    /**
+     * @param $pid
+     * @param $url
+     * @param $tags
+     * @param $with_pic
+     * @param $classid
+     * @param int $rule_id
+     * @return mixed
+     */
     public function add($pid, $url, $tags, $with_pic, $classid, $rule_id = 0)
     {
         $tagurl_info = array(
@@ -189,7 +198,8 @@ class Relation_model extends CI_Model {
                 break;
             }
         }
-        return $this->mongo_db->update($this->tags_coll, array('nexttime'=>$interval), array(), '$inc');
+        $interval += time();
+        return $this->mongo_db->update($this->tags_coll, array('nexttime'=>$interval));
     }
 
     /**

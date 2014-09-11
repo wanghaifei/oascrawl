@@ -186,6 +186,34 @@ class Crontab extends CI_Controller {
         $this->detail_model->updateStatus($detail['_id'], 1);
     }
 
+
+    /**
+     * 不在队列中也没抓取过的信息进行抓取
+     */
+    public function crawl_loss()
+    {
+        while (true) {
+            $relation_lists = $this->relation_model->find(array('status' => 1));
+            if(empty($relation_lists)){ sleep(15); continue; }
+            else break;
+        }
+        foreach ($relation_lists as $crawl_info) {
+            //如果上次抓取时间离现在小于10分钟，则不抓取
+            if(( time() - $crawl_info['lasttime']) < 600) continue;
+
+            $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
+            if(empty($crawl_url_lists)) continue;
+
+            foreach ($crawl_url_lists as $url => $status)
+            {
+                if($status === 0){
+                    $crawl_info['url'] = $url;
+                    $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
+                }
+            }
+        }
+    }
+
     /**
      * 解锁
      */
@@ -193,7 +221,7 @@ class Crontab extends CI_Controller {
     {
         while (true) {
             $unlock_lists = $this->relation_model->find(array('status' => 1));
-            if(empty($unlock_lists)){ sleep(5); continue; }
+            if(empty($unlock_lists)){ sleep(15); continue; }
             else break;
         }
         foreach ($unlock_lists as $crawl_info) {
@@ -208,9 +236,9 @@ class Crontab extends CI_Controller {
                 }
             }
             if ($unlock) {
+                $this->redis_model->del_redis_cache('url_relation', $crawl_info['url']);
                 $info = $this->relation_model->findOneByUrl($crawl_info['url']);
                 $this->relation_model->update_nexttime($info['_id']);
-                $this->relation_model->init_lastcount($info['_id']);
                 $this->relation_model->update_status($info['_id'], 0);
             }
         }
