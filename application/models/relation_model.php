@@ -183,16 +183,15 @@ class Relation_model extends CI_Model {
      */
     public function update_nexttime($id, $init = false)
     {
+        $tagurl_info = $this->findOneByID($id);
+        $interval_lists = $this->config->item('time_interval');
+
         $this->mongo_db->where(array('_id'=>$id));
 
         /** 初始化下次抓取时间 */
         if ($init) {
             return $this->mongo_db->update($this->tags_coll, array('nexttime'=>0));
         }
-
-        $tagurl_info = $this->findOneByID($id);
-        $interval_lists = $this->config->item('time_interval');
-
         foreach ($interval_lists as $time => $count_range) {
             if ((count($count_range) == 1) || ($tagurl_info['lastcount'] >= $count_range[0] && $tagurl_info['lastcount'] < $count_range[1])) {
                 $interval = $time;
@@ -200,9 +199,6 @@ class Relation_model extends CI_Model {
             }
         }
         $interval += time();
-
-        pr_exe_process(INSERT_COUNT, print_r($interval, true));
-
         return $this->mongo_db->update($this->tags_coll, array('nexttime'=>$interval));
     }
 
