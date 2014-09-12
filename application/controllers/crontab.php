@@ -197,7 +197,7 @@ class Crontab extends CI_Controller {
     public function crawl_loss()
     {
         pr_exe_process('开始：', '');
-
+        exit;
         while (true) {
             $relation_lists = $this->relation_model->find(array('status' => 1));
             if(empty($relation_lists)){ sleep(15); continue; }
