@@ -78,9 +78,11 @@ class htmlparser {
         $re_count = 3;
         for ($i = 1; $i <= $re_count; $i++)
         {
-            $this->html = send_http(htmlspecialchars_decode($url));
+            $http_info = send_http(htmlspecialchars_decode($url));
 
-            if(is_array($this->html) || empty($this->html)) {
+            $this->html = $http_info['data'];
+            //有时返回http_code 是404, 但能返回有效数据
+            if((! in_array($http_info['http']['http_code'], array(200, 302, 404)) || empty($this->html))) {
                 if($i < $re_count) continue;
                 else {
                     if($error_id = $this->get_error($this->html)) $this->_ci->log_model->record($url, $this->html, $error_id);
@@ -711,12 +713,15 @@ class htmlparser {
             return $this->html_pic_url[$pic_url];
         }
 
-        $pic_info= send_http(UPLOADFILE . '?url='. urlencode($pic_url));
+        $http_info = send_http(UPLOADFILE . '?url='. urlencode($pic_url));
+
+        $pic_info = $http_info['data'];
+
         $pic_info = json_decode($pic_info, true);
 
         $this->html_pic_url[$pic_url] = $pic_info;
 
-        if($error_id = $this->get_error($this->html)) $this->_ci->log_model->record($pic_url, $pic_info, $error_id);
+        if($error_id = $this->get_error($pic_info)) $this->_ci->log_model->record($pic_url, $pic_info, $error_id);
 
         return $pic_info;
 
@@ -757,7 +762,8 @@ class htmlparser {
         //css文件中的css
         if (preg_match_all('|'.$css_file_rule.'|ims', $this->html, $out)) {
             foreach ($out[1] as $css_url) {
-                $css_content[] = send_http(htmlspecialchars_decode($this->add_host($css_url)));
+                $http_info = send_http(htmlspecialchars_decode($this->add_host($css_url)));
+                $css_content[] = $http_info['data'];
             }
         }
         //获取有效dom

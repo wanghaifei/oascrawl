@@ -59,16 +59,16 @@ function send_http($url,$post = array(),$header = array(),$connecttimeout = 10,$
     if ($header){
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
     }
-
-    $rs = curl_exec($ch);
+    $data = curl_exec($ch);
     $http_info = curl_getinfo($ch);
-
-    if($http_info['http_code'] != 200 && $http_info['http_code'] != 302 ){
+/*    if($http_info['http_code'] != 200 && $http_info['http_code'] != 302 ){
         curl_close($ch);
         return $http_info;
-    }
-
+    }*/
     curl_close($ch);
+
+    $rs['data'] = $data;
+    $rs['http'] = $http_info;
 
     return $rs;
 }
