@@ -184,6 +184,7 @@ class Relation_model extends CI_Model {
     public function update_nexttime($id, $init = false)
     {
         $this->mongo_db->where(array('_id'=>$id));
+
         /** 初始化下次抓取时间 */
         if ($init) {
             return $this->mongo_db->update($this->tags_coll, array('nexttime'=>0));
@@ -199,6 +200,9 @@ class Relation_model extends CI_Model {
             }
         }
         $interval += time();
+
+        pr_exe_process(INSERT_COUNT, print_r($interval, true));
+
         return $this->mongo_db->update($this->tags_coll, array('nexttime'=>$interval));
     }
 
