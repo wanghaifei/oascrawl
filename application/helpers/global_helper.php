@@ -102,3 +102,18 @@ function arrtoxml($arr,$dom=0,$item=0){
     }
     return $dom->saveXML();
 }
+
+/**
+ * 打印执行过程
+ * @param $title
+ * @param $content
+ * @return bool
+ */
+function pr_exe_process($title, $content)
+{
+    if(ACCESS_BROWSER) return false;
+
+    echo $title."<br>";
+    echo $content."<br>";
+    echo "---------------------------------------------------------------------<br>";
+}

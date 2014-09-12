@@ -1,6 +1,14 @@
 <?php
 
 /*
+ * 是否为浏览器访问
+ */
+if(@$_SERVER['HTTP_USER_AGENT']){
+    define('ACCESS_BROWSER', TRUE);
+}else{
+    define('ACCESS_BROWSER', FALSE);
+}
+/*
  *---------------------------------------------------------------
  * APPLICATION ENVIRONMENT
  *---------------------------------------------------------------
