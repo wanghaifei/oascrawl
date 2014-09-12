@@ -116,4 +116,5 @@ function pr_exe_process($title, $content)
     echo $title."<br>";
     echo $content."<br>";
     echo "---------------------------------------------------------------------<br>";
+    flush();
 }
