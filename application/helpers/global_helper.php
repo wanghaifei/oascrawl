@@ -116,7 +116,6 @@ function pr_exe_process($title, $content='')
     if($title == '抓取开始'){
         header("Content-type: text/html; charset=utf-8");
     }
-
     echo $title.":<br>";
     echo $content."<br>";
     echo "---------------------------------------------------------------------<br>";

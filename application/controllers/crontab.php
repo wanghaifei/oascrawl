@@ -229,7 +229,6 @@ class Crontab extends CI_Controller {
             }
         }
         pr_exe_process(CRAWL_END);
-
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
-if (!defined('BASEPATH'))
-	exit('No direct script access allowed');
+if (!defined('BASEPATH')) exit('No direct script access allowed');
+
 
 if(!defined('CRAWL_START')) define ("CRAWL_START", '抓取开始');
 if(!defined('QUEUE_INFO')) define ("QUEUE_INFO", '队列');
