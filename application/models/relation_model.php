@@ -193,11 +193,7 @@ class Relation_model extends CI_Model {
         $interval_lists = $this->config->item('time_interval');
 
         foreach ($interval_lists as $time => $count_range) {
-            if (count($count_range) == 1) {
-                $interval = $time;
-                break;
-            }
-            if ($tagurl_info['lastcount'] >= $count_range[0] && $tagurl_info['lastcount'] < $count_range[1]) {
+            if ((count($count_range) == 1) || ($tagurl_info['lastcount'] >= $count_range[0] && $tagurl_info['lastcount'] < $count_range[1])) {
                 $interval = $time;
                 break;
             }
