@@ -2,6 +2,12 @@
 if (!defined('BASEPATH'))
 	exit('No direct script access allowed');
 
+if(!defined('CRAWL_START')) define ("CRAWL_START", '抓取开始');
+if(!defined('QUEUE_INFO')) define ("QUEUE_INFO", '队列');
+if(!defined('HTML_INFO')) define ("HTML_INFO", '抓取信息');
+if(!defined('INSERT_COUNT')) define ("INSERT_COUNT", '插入数');
+if(!defined('SET_CACHE')) define ("SET_CACHE", '保存缓存');
+if(!defined('CRAWL_END')) define ("CRAWL_END", '抓取结束');
 
 //关键词抓取相关配置参数
 $config['url_crawl'] = array(

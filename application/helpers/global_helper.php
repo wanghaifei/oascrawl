@@ -109,11 +109,15 @@ function arrtoxml($arr,$dom=0,$item=0){
  * @param $content
  * @return bool
  */
-function pr_exe_process($title, $content)
+function pr_exe_process($title, $content='')
 {
-    if(ACCESS_BROWSER) return false;
+    if(! ACCESS_BROWSER) return false;
 
-    echo $title."<br>";
+    if($title == '抓取开始'){
+        header("Content-type: text/html; charset=utf-8");
+    }
+
+    echo $title.":<br>";
     echo $content."<br>";
     echo "---------------------------------------------------------------------<br>";
     flush();

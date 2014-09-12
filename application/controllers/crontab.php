@@ -97,12 +97,14 @@ class Crontab extends CI_Controller {
      */
     public function crawl_relation()
     {
+        pr_exe_process(CRAWL_START);
+
         while (true) {
             $crawl_info = $this->queue_model->get_queue(self::Q_RELATION);
             if(empty($crawl_info)){ sleep(2); continue; }
             else break;
         }
-        pr_exe_process('队列： ', print_r($crawl_info, true));
+        pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
 
         $classid = $crawl_info['classid'];
 
@@ -111,7 +113,7 @@ class Crontab extends CI_Controller {
         $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic'],  $crawl_info['rule_id']);
         $url_pages = $this->htmlparser->turn_page_url();
 
-        pr_exe_process('抓取信息： ', print_r($relation_lists, true));
+        pr_exe_process(HTML_INFO, print_r($relation_lists, true));
 
         $class_info = $this->class_model->findOne(array('classid'=>$classid));
 
@@ -136,7 +138,7 @@ class Crontab extends CI_Controller {
         }
         $this->relation_model->add_lastcount($crawl_info['_id'], $insert_count);
 
-        pr_exe_process('插入数： ', print_r($insert_count, true));
+        pr_exe_process(INSERT_COUNT, print_r($insert_count, true));
 
         //改变抓取状态
         $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $cachekey);
@@ -153,9 +155,11 @@ class Crontab extends CI_Controller {
                 $crawl_url_lists[$url] = 0;
             }
         }
-        pr_exe_process('缓存： ', print_r($crawl_url_lists, true));
+        pr_exe_process(SET_CACHE, print_r($crawl_url_lists, true));
 
         $this->redis_model->set_redis_cache('url_relation', $cachekey, $crawl_url_lists);
+
+        pr_exe_process(CRAWL_END);
     }
 
     /**
@@ -196,8 +200,8 @@ class Crontab extends CI_Controller {
      */
     public function crawl_loss()
     {
-        pr_exe_process('开始：', '');
-        exit;
+        pr_exe_process(CRAWL_START);
+
         while (true) {
             $relation_lists = $this->relation_model->find(array('status' => 1));
             if(empty($relation_lists)){ sleep(15); continue; }
@@ -219,11 +223,13 @@ class Crontab extends CI_Controller {
                     $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
                     $this->relation_model->update_lasttime($crawl_info['_id']);
 
-                    pr_exe_process('队列： ', print_r($crawl_info, true));
+                    pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
 
                 }
             }
         }
+        pr_exe_process(CRAWL_END);
+
     }
 
     /**
