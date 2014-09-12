@@ -95,16 +95,16 @@ class Crontab extends CI_Controller {
      * 抓取相关信息列表
      * @return bool
      */
-    public function crawl_relation()
+    public function crawl_relation($url = '')
     {
         pr_exe_process(CRAWL_START);
 
-        while (true) {
-            $crawl_info = $this->queue_model->get_queue(self::Q_RELATION);
-            if(empty($crawl_info)){ sleep(2); continue; }
-            else break;
-        }
+        if($url) $crawl_info = $this->getCrawlInfo($url);
+        else $crawl_info = $this->queue_model->get_queue(self::Q_RELATION);
+
         pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
+
+        if(false == $crawl_info) return false;
 
         $classid = $crawl_info['classid'];
 
@@ -259,6 +259,29 @@ class Crontab extends CI_Controller {
                 $this->relation_model->update_status($info['_id'], 0);
             }
         }
+    }
+
+    /**
+     * @param $url
+     * @return bool
+     */
+    private function getCrawlInfo($url)
+    {
+        $url = urldecode($url);
+
+        $unlock_lists = $this->relation_model->find(array('status' => 1));
+
+        foreach ($unlock_lists as $crawl_info) {
+            $crawl_url_lists = $this->redis_model->get_redis_cache('url_relation', $crawl_info['url']);
+            if(empty($crawl_url_lists)) continue;
+
+            if(in_array($url, array_keys($crawl_url_lists))){
+                $crawl_info['cachekey'] = $crawl_info['url'];
+                $crawl_info['url'] = $url;
+                return $crawl_info;
+            }
+        }
+        return false;
     }
 
 }
