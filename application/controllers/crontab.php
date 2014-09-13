@@ -224,7 +224,6 @@ class Crontab extends CI_Controller {
                     $this->relation_model->update_lasttime($crawl_info['_id']);
 
                     pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
-
                 }
             }
         }
