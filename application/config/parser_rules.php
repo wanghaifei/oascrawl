@@ -67,3 +67,11 @@ $config['rules'][1] = array(
         'description'=>array('type'=>'class', 'val'=>'article-content'),
     ),*/
 );
+
+
+$config['rules'][2] = array(
+    //相关信息规则
+    2 => array(
+        'dom'=> '#tblSmalPictures',
+    ),
+);

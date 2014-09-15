@@ -35,7 +35,7 @@ class htmlparser {
     private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
 
     /** 移除元素规则列表 @var array */
-    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?</form>', '<!--.*?-->');
+    private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?</form>', '<!--.*?-->', '<\=".*?"', '>\=".*?"');
 
     /** 抓取页的相关信息 */
     private $html_type;        /** 抓取类型 @var int */
@@ -79,7 +79,6 @@ class htmlparser {
         for ($i = 1; $i <= $re_count; $i++)
         {
             $http_info = send_http(htmlspecialchars_decode($url));
-
             $this->html = $http_info['data'];
             //有时返回http_code 是404, 但能返回有效数据
             if((! in_array($http_info['http']['http_code'], array(200, 302, 404)) || empty($this->html))) {
@@ -94,6 +93,9 @@ class htmlparser {
         foreach ($this->dom_filter_rules as $rule) {
             $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
         }
+        //<img src="aa.jpg" <="" a="">
+        //<img src="aa.jpg"</a>
+        $this->html = str_replace('"</', '"></', $this->html);
         //获取站点编码
         preg_match('|charset=(.+?)"|ims', $this->html, $charset);
         $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
@@ -127,9 +129,8 @@ class htmlparser {
         if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
             $dom_lists = array('body');
         }
-        $this->html = $this->filter_lable($this->html, array('style'));
+        $this->html = preg_replace('|<style.*?</style>|ims', '', $this->html);
         phpquery::newDocumentHTML($this->html);
-
         //获取每个标签的分数
         foreach ($dom_lists as $dom) {
             $this->calculate_dom_score($dom);
@@ -137,7 +138,7 @@ class htmlparser {
         //截取分数最高的10个标签
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
         //测试
-        //$this->test($score_lists);
+        //$this->test($this->score);
         $info_lists = array();
         //获取每个标签内有效的子标签列表，并转化编码
         foreach($score_lists as $score_info){
@@ -215,6 +216,7 @@ class htmlparser {
 
         for ($k = 0; $k < count($dom_children); $k++) {
             $html = pq($dom_children)->eq($k);
+//            $html = str_replace( array("\r\n", "\r", "\n", "\t", "<br>", "&nbsp;"), '', $html);
             //没有图片或没有内容则忽略
             if( ! strip_tags($html, '<img>')) continue;
             //去除所有的text
@@ -878,6 +880,7 @@ class htmlparser {
         if($rule_id > 0 && true == $parser_rule = $this->_ci->config->config['rules'][$rule_id][$this->html_type])
         {
             $item_area = $parser_rule['dom'];
+
             if (!empty($item_area) && pq($item_area)->length > 0) {
                 $info_lists[] = $this->get_children_results($item_area, false);
                 //获取最有效的列表，并返回
