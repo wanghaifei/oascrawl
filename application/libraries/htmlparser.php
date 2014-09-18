@@ -39,12 +39,12 @@ class htmlparser {
 
     /** 抓取页的相关信息 */
     private $html_type;        /** 抓取类型 @var int */
-    private $rel_type;         /** 相关信息类型 @var int  */
+    private $dom_lists;         /** 所要抓取的dom @var array  */
     private $host;             /** 抓取域名 @var string */
     private $html;             /** 抓取到的页面内容 @var string */
     private $crawl_url;        /** 所要抓取的url @var  string*/
     private $html_charset;     /** 抓取到的页面编码 @var string */
-    private $score = array(); /** 标签lable信息 @var array*/
+    private $score = array(); /** 标签lable信息 @var array */
     private $html_pic_url = array(); /** 页面的图片信息 */
 
     private $lable_rules = array(
@@ -61,6 +61,7 @@ class htmlparser {
         $this->_ci->config->load('parser_rules');
 
         $this->_ci->load->model('log_model');
+        $this->_ci->load->model('cookie_model');
     }
 
     /**
@@ -78,7 +79,13 @@ class htmlparser {
         $re_count = 3;
         for ($i = 1; $i <= $re_count; $i++)
         {
-            $http_info = send_http(htmlspecialchars_decode($url));
+            $header = array();
+            if($cookie = $this->_ci->cookie_model->rand_cookie($url_info['host'])){
+                $header[] = 'Cookie:'.$cookie['cookie'];
+            }
+//            $this->html = file_get_contents(APPPATH . 'cache/detail.html');
+//            break;
+            $http_info = send_http(htmlspecialchars_decode($url), array(), $header);
             $this->html = $http_info['data'];
             //有时返回http_code 是404, 但能返回有效数据
             if((! in_array($http_info['http']['http_code'], array(200, 302, 404)) || empty($this->html))) {
@@ -93,9 +100,7 @@ class htmlparser {
         foreach ($this->dom_filter_rules as $rule) {
             $this->html = preg_replace('|' . $rule . '|ims', '', $this->html);
         }
-        //<img src="aa.jpg" <="" a="">
-        //<img src="aa.jpg"</a>
-        $this->html = str_replace('"</', '"></', $this->html);
+
         //获取站点编码
         preg_match('|charset=(.+?)"|ims', $this->html, $charset);
         $this->html_charset = strtoupper(str_replace('"','', $charset[1]));
@@ -105,7 +110,21 @@ class htmlparser {
 
         //phpquery 初始化
         phpQuery::$defaultCharset = $this->charset;
+
+        //如果抓取标签列表页，则不过滤左右边框，否则过滤
+        $body = ($this->html_type == 1) ? true : false;
+        if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
+           $this->dom_lists  = array('body');
+        }
+        //<img src="aa.jpg"</a>  or  <img src="aa.jpg" <="" a="">
+        $this->html = str_replace('"</a>', '">', $this->html);
+        $this->html = preg_replace('|.+<body |ims', '<!Doctype html><html xmlns=http://www.w3.org/1999/xhtml><body ', $this->html);
+
+        $this->html = preg_replace('|<style.*?</style>|ims', '', $this->html);
+        $this->html = $this->filter_lable($this->html, array('tr'));
+
         phpquery::newDocumentHTML($this->html);
+
         return true;
     }
 
@@ -124,21 +143,15 @@ class htmlparser {
         if(true == $data = $this->results_byrule($rule_id, $with_pic)){
             return $data;
         }
-        //如果抓取标签列表页，则不过滤左右边框，否则过滤
-        $body = ($this->html_type == 1) ? true : false;
-        if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
-            $dom_lists = array('body');
-        }
-        $this->html = preg_replace('|<style.*?</style>|ims', '', $this->html);
-        phpquery::newDocumentHTML($this->html);
+
         //获取每个标签的分数
-        foreach ($dom_lists as $dom) {
+        foreach ($this->dom_lists as $dom) {
             $this->calculate_dom_score($dom);
         }
         //截取分数最高的10个标签
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
         //测试
-        //$this->test($this->score);
+        //$this->test($score_lists);
         $info_lists = array();
         //获取每个标签内有效的子标签列表，并转化编码
         foreach($score_lists as $score_info){
@@ -565,29 +578,28 @@ class htmlparser {
                 }
                 //获取列表内图片最多的元素
                 if ($pic) {
-                    foreach($lists as $key_1=>$info)
-                    {
+                    foreach($lists as $key_1=>$info){
                         $pic_count = 0;
-                        foreach ($info as $val) {
-                            if(strstr($val['description'], '<img ')) $pic_count++;
+                        if($pic_info_lists = $this->get_valid_pic_url(implode('', array_column($info, 'description')))) {
+                            foreach($pic_info_lists as $pic_info){
+                                if($pic_info['width'] > 100) $count[$key_1] = ++$pic_count;
+                            }
                         }
-                        $count[$key_1] = $pic_count;
                     }
                     $pos = array_search(max($count), $count);
                     $data = $lists[$pos];
                 }
+
                 foreach ($data as $key => $info) {
                     $description = $data[$key]['description'];
                     unset($data[$key]['description']);
 
                     $pic_info_lists =  $data[$key]['description']['pics'] = $this->get_valid_pic_url($description);
+
                     if($pic){
-                        if (!empty($pic_info_lists)) {
-                            $pic_info_lists = array_sort($pic_info_lists, 'width');
-                            if($pic_info_lists[0]['width'] < 100) return false;
-                        }else{
-                            return false;
-                        }
+                        if(empty($pic_info_lists)){ unset($data[$key]); continue; }
+                        $pic_info_lists = array_sort($pic_info_lists, 'width');
+                        if($pic_info_lists[0]['width'] < 100){ unset($data[$key]); continue; }
                     }
 
                     $data[$key]['description']['words'] = $this->get_content_words($description);
@@ -598,28 +610,27 @@ class htmlparser {
 
             case 3:
                 foreach($lists as $info){
+                    $content = $info['content'];
+                    unset($info['content']);
+
                     if(!empty($info['title']) && in_array($info['title'], $this->filter_title)) continue;
-                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $info['content'])))) continue;
+                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $content)))) continue;
+
+                    $info['content']['words'] = $this->get_content_words($content);
+                    !empty($info['title']) && $info['title'] = $this->get_valid_title($info['title']);
+
+                    $pic_info_lists = $info['content']['pics'] = $this->get_valid_pic_url($content);
+
+                    if($pic){
+                        if ($pic_info_lists) {
+                            $pic_info_lists = array_sort($pic_info_lists, 'width');
+                            if ($pic_info_lists[0]['width'] > 250){ $data = $info; break; }
+                        }
+                        else continue;
+                    }
                     $data = $info;
                     break;
                 }
-
-                $content = $data['content'];
-                unset($data['content']);
-
-                $pic_info_lists = $data['content']['pics'] = $this->get_valid_pic_url($content);
-                if($pic){
-                    if (!empty($pic_info_lists)) {
-                        $pic_info_lists = array_sort($pic_info_lists, 'width');
-                        if($pic_info_lists[0]['width'] < 250) return false;
-                    }else{
-                        return false;
-                    }
-                }
-
-                $data['content']['words'] = $this->get_content_words($content);
-                !empty($data['title']) && $data['title'] = $this->get_valid_title($data['title']);
-
                 break;
         }
         return $data;
@@ -657,11 +668,11 @@ class htmlparser {
      */
     private function get_content_words($content)
     {
-        $content = $this->filter_lable($content, array('a'));
-
-        $content = strip_tags($content, '<ul><li><br><p>');
         $content = str_replace(array("\r\n", "\r", "\n", "\t"), "", $content);
 
+        if(! str_replace(array(' ', '&nbsp;'), '', strip_tags($content))) return;
+
+        $content = strip_tags($content, '<ul><li><br><p>');
         //去除标签属性
         $filter_attr = array('id', 'class', 'style', 'width', 'height', 'onload', 'onclick', 'onsubmit', 'onchange', 'onblur', 'onkeydown', 'onkeyup', 'onmouseout', 'onmouseover');
         foreach($filter_attr as $attr){
@@ -714,7 +725,6 @@ class htmlparser {
         if(isset($this->html_pic_url[$pic_url])){
             return $this->html_pic_url[$pic_url];
         }
-
         $http_info = send_http(UPLOADFILE . '?url='. urlencode($pic_url));
 
         $pic_info = $http_info['data'];

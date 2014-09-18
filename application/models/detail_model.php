@@ -6,9 +6,10 @@
 
 class Detail_model extends CI_Model {
 
-    var $collection = 'detail';
-    var $detail_table = '';
+    var $db = 'detail';
+    var $detail_table;
 
+    var $switch_db;
     /**
      * _id:  对url使用md5过的值，确保唯一。
      * tagid: 集合tags 字段_id. 父id
@@ -31,8 +32,20 @@ class Detail_model extends CI_Model {
 
     function __construct() {
         parent::__construct();
+
         $this->load->library('mongo_db');
-        $this->mongo_db->switch_db($this->collection);
+        $this->switch_db = $this->mongo_db->dbname;
+        $this->mongo_db->switch_db($this->db);
+    }
+
+    public function initDb()
+    {
+        $this->mongo_db->switch_db($this->db);
+    }
+
+    public function recoverDb()
+    {
+        $this->mongo_db->switch_db($this->switch_db);
     }
 
     /**

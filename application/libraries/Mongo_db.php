@@ -29,7 +29,7 @@ class Mongo_db {
 	private $port;
 	private $user;
 	private $pass;
-	private $dbname;
+	public  $dbname;
 	private $persist;
 	private $persist_key;
 	private $query_safety = 'safe';

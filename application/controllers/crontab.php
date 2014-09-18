@@ -37,12 +37,9 @@ class Crontab extends CI_Controller {
      */
     public function crawl_tags()
     {
-        while (true) {
-            $queue_info = $this->queue_model->get_queue(self::Q_FEED);
-            if(empty($queue_info)){ sleep(10); continue; }
-            else break;
+        if(false == $queue_info = $this->queue_model->get_queue(self::Q_FEED)){
+            sleep(10); return false;
         }
-
         $tag_lists = $this->htmlparser->start($queue_info['url'], 1);
 
         foreach ($tag_lists as $info) {
@@ -65,12 +62,9 @@ class Crontab extends CI_Controller {
      */
     public function  sync_relation()
     {
-        while (true) {
-            $tagurls = $this->relation_model->nextCrawl();
-            if(empty($tagurls)){ sleep(5); continue; }
-            else break;
+        if(false == $tagurls = $this->relation_model->nextCrawl()){
+            sleep(5); return false;
         }
-
         foreach ($tagurls as $info) {
 
             $crawl_url_lists = array();
@@ -136,6 +130,8 @@ class Crontab extends CI_Controller {
             $this->queue_model->add_queue(self::Q_DETAIL, array('url'=>$url_info['url'], 'with_pic'=>$crawl_info['with_pic'], 'rule_id'=>$crawl_info['rule_id'], 'classid'=>$classid ));
             $insert_count++;
         }
+        $this->detail_model->recoverDb();
+
         $this->relation_model->add_lastcount($crawl_info['_id'], $insert_count);
 
         pr_exe_process(INSERT_COUNT, print_r($insert_count, true));
@@ -165,14 +161,22 @@ class Crontab extends CI_Controller {
     /**
      * 抓取详细信息
      */
-    public function crawl_detail()
+    public function crawl_detail($url='', $classid = 1, $rule_id = 0)
     {
-        while (true) {
-            $crawl_info = $this->queue_model->get_queue(self::Q_DETAIL);
-            if(empty($crawl_info)){ sleep(2); continue; }
-            else break;
-        }
+        pr_exe_process(CRAWL_START);
+
+        if($url){ $crawl_info = $this->getDetailInfo($classid, $url); $crawl_info['rule_id'] = 0; $crawl_info['classid'] = $classid; }
+
+        else $crawl_info = $this->queue_model->get_queue(self::Q_DETAIL);
+
+        pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
+
+        if(false == $crawl_info) return false;
+
         $detail_info = $this->htmlparser->start($crawl_info['url'], 3, $crawl_info['with_pic'],  $crawl_info['rule_id']);
+
+        pr_exe_process(HTML_INFO, print_r($detail_info, true));
+
         if(empty($detail_info['content'])) return false;
 
         list($usec, $sec) = explode(" ",microtime());
@@ -186,13 +190,15 @@ class Crontab extends CI_Controller {
 
         $this->load->model('detail_model');
 
+        $this->detail_model->initDb();
         $this->detail_model->setTableName($class_info['name']);
-
         $detail = $this->detail_model->findOneByUrl($crawl_info['url']);
-
         $this->detail_model->update($detail['_id'], $insert_data);
-
         $this->detail_model->updateStatus($detail['_id'], 1);
+        $this->detail_model->recoverDb();
+
+        pr_exe_process(CRAWL_END);
+
     }
 
     /**
@@ -280,6 +286,20 @@ class Crontab extends CI_Controller {
             }
         }
         return false;
+    }
+
+    private function getDetailInfo($classid, $url){
+
+        $class_info = $this->class_model->findOne(array('classid'=>$classid));
+
+        $this->load->model('detail_model');
+        $this->detail_model->setTableName($class_info['name']);
+
+        $detail_info = $this->detail_model->findOneByUrl(urldecode($url));
+
+        $this->detail_model->recoverDb();
+
+        return $detail_info;
     }
 
 }

@@ -18,6 +18,7 @@ class Manager extends CI_Controller {
         $this->load->model('relation_model');
         $this->load->model('redis_model');
         $this->load->model('queue_model');
+        $this->load->model('cookie_model');
         $this->load->library('htmlparser');
     }
 
@@ -128,5 +129,12 @@ class Manager extends CI_Controller {
             $this->relation_model->update_lasttime($rel_info['_id'], true);
             $this->relation_model->update_status($rel_info['_id'], 0);
         }
+    }
+
+    public function add_cookie()
+    {
+        //www.999gag.com
+        $cookie = array('host'=>'www.999gag.com', 'cookie'=>'hl=tr;');
+        $this->cookie_model->add($cookie);
     }
 }
