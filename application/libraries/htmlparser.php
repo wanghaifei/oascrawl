@@ -31,14 +31,12 @@ class htmlparser {
     /** 无效标题 @var array */
     private $filter_title = array('502 Bad Gateway', 'NOT FOUND', 'Not Found');
 
-    /** 元素相似性规则列表 @var array */
-    private $dom_similar_rules = array('<div [id|class]{1}="([^<>\"]*?content[^<>]*?)"',);
-
     /** 移除元素规则列表 @var array */
     private $dom_filter_rules = array('<script.*?>.*?</script.*?>', '<embed .*?>', '<iframe.*?></iframe>', '<form .*?</form>', '<!--.*?-->', '<\=".*?"', '>\=".*?"');
 
     /** 抓取页的相关信息 */
     private $html_type;        /** 抓取类型 @var int */
+    private $with_pic;         /** 是否抓取图片 @var int */
     private $dom_lists;         /** 所要抓取的dom @var array  */
     private $host;             /** 抓取域名 @var string */
     private $html;             /** 抓取到的页面内容 @var string */
@@ -50,6 +48,8 @@ class htmlparser {
     private $lable_rules = array(
         'a'=> array('<a [^<>]*?href="([^javascript].+?)".*?>(.*?)</a>', '<a [^<>]*?onclick="window.location=\'(.+?)\'".*?>(.*?)</a>'),
     );
+
+    public $recrawl = false;
 
     /**
      * 构造函数
@@ -69,7 +69,6 @@ class htmlparser {
      * @param $url
      */
     private function _init($url){
-
         $this->crawl_url = $url;
         //保存域名
         if ($url_info = parse_url($url)) {
@@ -86,15 +85,11 @@ class htmlparser {
 //            $this->html = file_get_contents(APPPATH . 'cache/detail.html');
 //            break;
             $http_info = send_http(htmlspecialchars_decode($url), array(), $header);
-            $this->html = $http_info['data'];
-            //有时返回http_code 是404, 但能返回有效数据
-            if((! in_array($http_info['http']['http_code'], array(200, 302, 404)) || empty($this->html))) {
-                if($i < $re_count) continue;
-                else {
-                    if($error_id = $this->get_error($this->html)) $this->_ci->log_model->record($url, $this->html, $error_id);
-                    return false;
-                }
-            }
+            if($this->html = $http_info['data']) break;
+        }
+        if(empty($this->html)){
+            $this->recrawl = true;
+            return false;
         }
         //过滤干扰标签
         foreach ($this->dom_filter_rules as $rule) {
@@ -109,15 +104,16 @@ class htmlparser {
             $this->html = mb_convert_encoding($this->html, $this->charset, $this->html_charset);
 
         //phpquery 初始化
+        phpquery::newDocumentHTML($this->html);
         phpQuery::$defaultCharset = $this->charset;
-
         //如果抓取标签列表页，则不过滤左右边框，否则过滤
         $body = ($this->html_type == 1) ? true : false;
-        if ($body == true || false == $dom_lists = $this->get_css_dom_lists()){
+        if ($body == true || false == $this->dom_lists = $this->get_css_dom_lists()){
            $this->dom_lists  = array('body');
         }
         //<img src="aa.jpg"</a>  or  <img src="aa.jpg" <="" a="">
         $this->html = str_replace('"</a>', '">', $this->html);
+
         $this->html = preg_replace('|.+<body |ims', '<!Doctype html><html xmlns=http://www.w3.org/1999/xhtml><body ', $this->html);
 
         $this->html = preg_replace('|<style.*?</style>|ims', '', $this->html);
@@ -136,14 +132,14 @@ class htmlparser {
      */
     public function start($url, $html_type = 1, $with_pic = true, $rule_id = 0)
     {
+        $this->with_pic = $with_pic;
         $this->html_type = $html_type;
 
         if(false == $this->_init($url)) return false;
         //通过配置文件规则获取信息
-        if(true == $data = $this->results_byrule($rule_id, $with_pic)){
+        if(true == $data = $this->results_byrule($rule_id)){
             return $data;
         }
-
         //获取每个标签的分数
         foreach ($this->dom_lists as $dom) {
             $this->calculate_dom_score($dom);
@@ -151,19 +147,21 @@ class htmlparser {
         //截取分数最高的10个标签
         $score_lists = array_splice(array_sort($this->score, 'score'), 0, 10);
         //测试
-        //$this->test($score_lists);
-        $info_lists = array();
-        //获取每个标签内有效的子标签列表，并转化编码
-        foreach($score_lists as $score_info){
+//        $this->test($score_lists);
+        //获取每个标签内有效的子标签列表
+        foreach($score_lists as $key => $score_info){
             if ($valid_info = $this->get_children_results($score_info['obj'])) {
-                $info_lists[] = $valid_info; //convert_encoding($this->html_charset, $this->charset, $valid_info);
+                $results[] = $valid_info;
             }
         }
-        //获取最有效的列表，并返回
-        if ($data = $this->get_valid_results($info_lists, $with_pic)) {
-            return $data;
+        if(! $results) return false;
+        if($this->html_type != 2) return $results[0];
+
+        $valid_result = array();
+        foreach($results as $info){
+            if(count($info) > count($valid_info)) $valid_result = $info;
         }
-        return false;
+        return $valid_result;
     }
 
     /**
@@ -348,13 +346,13 @@ class htmlparser {
         //文字带有url的,字符越长减分越大
         if (preg_match_all('|<a href=.*?>(.*?)</a>|ims', $currentHtml, $out)) {
             foreach($out[1] as $content){
-                $currentScore -= mb_strlen(str_replace(' ', '', str_replace(' ', '', strip_tags($content))), $this->html_charset) * 10;
+                $currentScore -= mb_strlen(str_replace(' ', '', str_replace(' ', '', strip_tags($content)))) * 10;
             }
         }
         //统计文字长度
         $replace = preg_replace('|<a .*?</a>|ims', '', $currentHtml);
         $replace = str_replace(' ', '', $replace);
-        $currentScore += mb_strlen($replace, $this->html_charset);
+        $currentScore += mb_strlen($replace);
 
         return $currentScore;
     }
@@ -491,7 +489,7 @@ class htmlparser {
                 for ($k = 0; $k < count($dom_children); $k++) {
                     $html = pq($dom_children)->eq($k);
 
-                    if (! preg_match_all('|<a [^<>]*?href="(.*?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
+                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
 
                     if(count($out[1]) > 1 || strstr($out[2][0], '<img ')) return false;
 
@@ -509,9 +507,8 @@ class htmlparser {
 
                     $html = trim(pq($dom_children)->eq($k));
                     //if(strpos($html, '<a ') === 0)continue;
-                    if(false == str_replace(' ', '', strip_tags($html, '<img>'))) continue;
-                    if (! preg_match_all('|<a [^<>]*?href="([^#]+?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
-
+                    if (false == str_replace(' ', '', strip_tags($html, '<img>')) && false == $this->get_valid_title(preg_replace('|<a .*?</a>|ims', '', $html))) continue; //不能只是链接地址
+                    if (! preg_match_all('|<a [^<>]*?href="(.+?)".*?>(.*?)</a>|ims', trim($html), $out)) continue;
                     $url_lists = $out[1];
                     $content_lists = $out[2];
                     //获取重复地址
@@ -535,105 +532,56 @@ class htmlparser {
                             break;
                         }
                     }
-                    $html = substr($html, 0);
-                    @$ret_info[] = array('url'=>htmlspecialchars_decode($url), 'title'=>$title, 'description'=>$html);
-                }
+                    //抓取url存在于列表中,则跳过
+                    if($this->crawl_url == $url) return false;
 
+                    $html = substr($html, 0);
+                    $pics = $this->get_valid_pic_url($html);
+
+                    if($this->with_pic && ! $this->isValidPic($pics)) continue;
+
+                    $relation_info['url'] = htmlspecialchars_decode($url);
+                    $relation_info['title'] = $this->get_valid_title($title);
+                    $relation_info['description']['pics'] = $pics;
+                    $relation_info['description']['words'] = $this->get_content_words($html);
+
+                    $ret_info[] = $relation_info;
+                }
                 return $ret_info;
 
             case 3 :
                 $html = pq($dom)->html();
+                if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $html)))) return false;
 
-                $ret_info = array('content'=>$html);
+                $pics = $this->get_valid_pic_url($html);
+                if($this->with_pic && ! $this->isValidPic($pics)) return false;
 
-                if (preg_match('|<h[1-2]>(.*?)</h[1-2]>|ims', $html, $out)) {
-                    $title = $out[1];
-                    $html = preg_replace('|<h[1-2]>(.*?)</h[1-2]>|ims', '', $html);
+                $ret_info['content']['pics'] = $pics;
+                $ret_info['content']['words'] = $this->get_content_words($html);
 
-                    $ret_info = array('title'=>$title, 'content'=>$html);
+                if (preg_match('|<h[1-2]>(.+?)</h[1-2]>|ims', $html, $out)) {
+                    $ret_info['title'] = $this->get_valid_title($out[1]);
+                    $ret_info['content']['words'] = $this->get_content_words(str_replace($out[0], '', $html));
+                    if(!empty($ret_info['title']) && in_array($ret_info['title'], $this->filter_title)) return false;;
                 }
                 return $ret_info;
         }
     }
 
-    private function get_valid_results($lists, $pic)
+    /**
+     * @param array $pics
+     * @return bool
+     */
+    private function isValidPic(array $pics)
     {
-        //有图片则计算图片, 图片最多的为有效的
-        $count = $data = array();
+        $width = $this->html_type == 2 ? 100 : 250;
+        $pic_info_lists = array_sort($pics, 'width');
 
-        switch($this->html_type){
-
-            case 1 :
-                $data = $lists[0];
-                break;
-
-            case 2 :
-                foreach($lists as $info){
-                    $url_lists = array_column($info, 'url');
-                    $description = implode('', array_column($info, 'description'));
-                    //内容不能为空(不能只是链接地址)
-                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $description)))) continue;
-                    //抓取url存在于列表中,则跳过
-                    if(! in_array($this->crawl_url, $url_lists)){ $data = $info; break; }
-                }
-                //获取列表内图片最多的元素
-                if ($pic) {
-                    foreach($lists as $key_1=>$info){
-                        $pic_count = 0;
-                        if($pic_info_lists = $this->get_valid_pic_url(implode('', array_column($info, 'description')))) {
-                            foreach($pic_info_lists as $pic_info){
-                                if($pic_info['width'] > 100) $count[$key_1] = ++$pic_count;
-                            }
-                        }
-                    }
-                    $pos = array_search(max($count), $count);
-                    $data = $lists[$pos];
-                }
-
-                foreach ($data as $key => $info) {
-                    $description = $data[$key]['description'];
-                    unset($data[$key]['description']);
-
-                    $pic_info_lists =  $data[$key]['description']['pics'] = $this->get_valid_pic_url($description);
-
-                    if($pic){
-                        if(empty($pic_info_lists)){ unset($data[$key]); continue; }
-                        $pic_info_lists = array_sort($pic_info_lists, 'width');
-                        if($pic_info_lists[0]['width'] < 100){ unset($data[$key]); continue; }
-                    }
-
-                    $data[$key]['description']['words'] = $this->get_content_words($description);
-                    !empty($data[$key]['title']) && $data[$key]['title'] = $this->get_valid_title($data[$key]['title']);
-                }
-
-                break;
-
-            case 3:
-                foreach($lists as $info){
-                    $content = $info['content'];
-                    unset($info['content']);
-
-                    if(!empty($info['title']) && in_array($info['title'], $this->filter_title)) continue;
-                    if (false == str_replace(' ', '', strip_tags(preg_replace('|<a .*?</a>|ims', '', $content)))) continue;
-
-                    $info['content']['words'] = $this->get_content_words($content);
-                    !empty($info['title']) && $info['title'] = $this->get_valid_title($info['title']);
-
-                    $pic_info_lists = $info['content']['pics'] = $this->get_valid_pic_url($content);
-
-                    if($pic){
-                        if ($pic_info_lists) {
-                            $pic_info_lists = array_sort($pic_info_lists, 'width');
-                            if ($pic_info_lists[0]['width'] > 250){ $data = $info; break; }
-                        }
-                        else continue;
-                    }
-                    $data = $info;
-                    break;
-                }
-                break;
+        if (!empty($pic_info_lists[0]['width']) && $pic_info_lists[0]['width'] > $width){
+            return true;
+        }else{
+            return false;
         }
-        return $data;
     }
 
     private function get_valid_pic_url($content)
@@ -658,7 +606,7 @@ class htmlparser {
     private function get_valid_title($title)
     {
         $arr = array("\r\n", "\r", "\n", "\t", "<br>");
-        return str_replace($arr, " ", strip_tags($title));
+        return trim(str_replace($arr, " ", strip_tags($title)));
     }
 
     /**
@@ -733,8 +681,6 @@ class htmlparser {
 
         $this->html_pic_url[$pic_url] = $pic_info;
 
-        if($error_id = $this->get_error($pic_info)) $this->_ci->log_model->record($pic_url, $pic_info, $error_id);
-
         return $pic_info;
 
     }
@@ -780,6 +726,7 @@ class htmlparser {
         }
         //获取有效dom
         foreach ($css_content as $content) {
+            $content = preg_replace('|/\*\*.*?\*\*/|ims', '', $content);
             if (@preg_match_all('|'.$css_content_rule.'|ims', $content, $out1)) {
                 foreach($out1[2] as $key => $width) {
                     if ($width >= $this->min_width) {
@@ -875,8 +822,15 @@ class htmlparser {
     private function add_host($url)
     {
         if (strpos($url, 'http') !== 0){
-            if(strpos($url, '/') !== 0) $url = '/'.$url;
-            $url = $this->host . $url;
+            if(strpos($url, './') === 0){
+                $url_info = parse_str($this->crawl_url);
+                $path = $url_info['path'] ? $url_info['path'] : '/';
+                if(strpos($path, '.')) $path = substr($path, 0, strrpos($this->crawl_url, '/')+1);
+                if(strpos(strrev($path), '/') !==0 ) $path .= '/';
+
+                $url = $this->host . $path . substr($url, 2);
+            }
+            elseif(strpos($url, '/') === 0) $url = $this->host . $url;
         }
         return $url;
     }
@@ -885,18 +839,33 @@ class htmlparser {
      * @param $rule_id
      * @return array|bool|string
      */
-    private function results_byrule($rule_id , $with_pic)
+    private function results_byrule($rule_id)
     {
+
         if($rule_id > 0 && true == $parser_rule = $this->_ci->config->config['rules'][$rule_id][$this->html_type])
         {
             $item_area = $parser_rule['dom'];
-
             if (!empty($item_area) && pq($item_area)->length > 0) {
-                $info_lists[] = $this->get_children_results($item_area, false);
-                //获取最有效的列表，并返回
-                return $this->get_valid_results($info_lists, $with_pic);
+                return $this->get_children_results($item_area, false);
             }
         }
         return false;
+    }
+
+    private function make_repose($recrawl, $data, $http_code=0){
+
+        //有时返回http_code 是404, 但能返回有效数据
+
+        $repose_code = array(
+            'suss' => 200,
+            'is_empty' => 201,
+            'html_invalid' => 202,
+            'not_found' => 404,
+            'unknown' => 999,
+        );
+
+        $this->repose['http_code'] = $http_code;
+        if(empty($this->html)) $this->repose['status_code'] = $this->repose_code['is_empty'];
+        else $this->repose['status_code'] = $this->repose_code['unknown'];
     }
 }

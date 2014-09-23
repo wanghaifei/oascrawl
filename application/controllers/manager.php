@@ -10,6 +10,7 @@
 class Manager extends CI_Controller {
 
     const Q_RELATION = 'relation_crawl';
+    const Q_DETAIL_TITLE = 'detail_title_crawl';
 
     function __construct() {
         parent::__construct();
@@ -47,27 +48,33 @@ class Manager extends CI_Controller {
         //$this->feeds_model->add('http://www.komikler.com/komikresim/', 1, array(), 1, 0);
         //$this->feeds_model->add('http://www.komikfikralar.org/', 1, array(), 0, 1);
     }
-
     /**
-     * 增加
+     * 增加relation
      */
     public function add_relation()
     {
         //http://www.lazland.com/komikresim/default.asp?S=EB
         $this->relation_model->add(0, 'http://www.lazland.com/komikresim/default.asp?Start=0', array(), 1, 1, 0);
-
     }
 
     /**
-     * 清空缓存
+     * 增加detail_title
      */
-    public function emptycache()
+    public function add_detail_title()
     {
-        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
-            foreach ($unlock_lists as $crawl_info) {
-                $this->redis_model->set_redis_cache('url_relation', $crawl_info['url'], array());
-            }
-        }
+        $url = 'http://www.fikralarim.com/';
+        $queue_info = array('url'=>$url, 'with_pic'=>0, 'rule_id'=>1, 'classid'=>1, 'cachekey'=>$url);
+        $this->queue_model->add_queue(self::Q_DETAIL_TITLE, $queue_info);
+    }
+
+    /**
+     * 增加cookie
+     */
+    public function add_cookie()
+    {
+        //www.999gag.com
+        $cookie = array('host'=>'www.999gag.com', 'cookie'=>'hl=tr;');
+        $this->cookie_model->add($cookie);
     }
 
     /**
@@ -130,11 +137,15 @@ class Manager extends CI_Controller {
             $this->relation_model->update_status($rel_info['_id'], 0);
         }
     }
-
-    public function add_cookie()
+    /**
+     * 清空缓存
+     */
+    public function emptycache()
     {
-        //www.999gag.com
-        $cookie = array('host'=>'www.999gag.com', 'cookie'=>'hl=tr;');
-        $this->cookie_model->add($cookie);
+        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
+            foreach ($unlock_lists as $crawl_info) {
+                $this->redis_model->del_redis_cache('url_relation', $crawl_info['url']);
+            }
+        }
     }
 }
