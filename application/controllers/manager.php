@@ -134,6 +134,7 @@ class Manager extends CI_Controller {
             //更改抓取状态
             $this->relation_model->update_nexttime($rel_info['_id'], true);
             $this->relation_model->update_lasttime($rel_info['_id'], true);
+            $this->relation_model->add_lastcount($rel_info['_id'], 0, true);
             $this->relation_model->update_status($rel_info['_id'], 0);
         }
     }

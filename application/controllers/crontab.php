@@ -258,7 +258,7 @@ class Crontab extends CI_Controller {
             if($this->detail_model->findOneByUrl($info['url'])) {
                 continue;
             }
-            $this->detail_model->add(0, $info['url'], array(), array('title'=>$info['tag']));
+            $this->detail_model->add(0, $info['url'], array(), array('title'=>$info['tag'], 'with_pic'=>$queue_info['with_pic']));
             $this->queue_model->add_queue(self::Q_DETAIL, array('url'=>$info['url'], 'with_pic'=>$queue_info['with_pic'], 'rule_id'=>$queue_info['rule_id'], 'classid'=>$queue_info['classid'] ));
             $insert_count++;
         }
