@@ -220,7 +220,7 @@ class Crontab extends CI_Controller {
     /**
      * 抓取详细信息
      */
-    public function detail_title_crawl($url='', $with_pic = 0, $rule_id = 0, $classid = 1)
+    public function crawl_detail_title($url='', $with_pic = 0, $rule_id = 0, $classid = 1)
     {
         pr_exe_process(CRAWL_START);
 
