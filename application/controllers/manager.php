@@ -138,6 +138,7 @@ class Manager extends CI_Controller {
             $this->relation_model->update_status($rel_info['_id'], 0);
         }
     }
+
     /**
      * 清空缓存
      */
