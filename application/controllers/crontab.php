@@ -69,7 +69,7 @@ class Crontab extends CI_Controller {
     public function  sync_relation()
     {
         if(false == $tagurls = $this->relation_model->nextCrawl()){
-            sleep(5); return false;
+            sleep(20); return false;
         }
         foreach ($tagurls as $info) {
 
@@ -104,7 +104,7 @@ class Crontab extends CI_Controller {
 
         pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
 
-        if(false == $crawl_info) return false;
+        if(false == $crawl_info){ sleep(20); return false;}
 
         $classid = $crawl_info['classid'];
 
@@ -183,7 +183,7 @@ class Crontab extends CI_Controller {
 
         pr_exe_process(QUEUE_INFO, print_r($crawl_info, true));
 
-        if(false == $crawl_info) return false;
+        if(false == $crawl_info){ sleep(20); return false;}
 
         $detail_info = $this->htmlparser->start($crawl_info['url'], 3, $crawl_info['with_pic'],  $crawl_info['rule_id']);
 
@@ -233,7 +233,7 @@ class Crontab extends CI_Controller {
         pr_exe_process(QUEUE_INFO, print_r($queue_info, true));
 
         if(false == $queue_info){
-            sleep(10); return false;
+            sleep(20); return false;
         }
 
         $title_lists = $this->htmlparser->start($queue_info['url'], 1, $queue_info['with_pic'],  $queue_info['rule_id']);
