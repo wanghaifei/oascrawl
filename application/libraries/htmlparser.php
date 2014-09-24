@@ -390,6 +390,9 @@ class htmlparser {
     private function pic_score($dom)
     {
         $currentScore = 0;
+
+        if(! $this->with_pic) return $currentScore;
+
         $html = pq($dom)->html();
         //没图片则不计算分数
         if(! strstr($html, '<img ')) return $currentScore;
@@ -619,6 +622,32 @@ class htmlparser {
         $content = str_replace(array("\r\n", "\r", "\n", "\t"), "", $content);
 
         if(! str_replace(array(' ', '&nbsp;'), '', strip_tags($content))) return;
+
+        //过滤 例如： Fıkralar Genel > Fıkraları > Foto Muhabiri
+        if(false !== $pos = strpos($content, '&gt;')){
+            $content_lists = explode('&gt;', $content);
+            foreach($content_lists as $key => $info){
+                $content_lists[$key] = preg_replace('|^<a .*?</a>|ims', '', trim($info));
+                $content_lists[$key] = preg_replace('|<a .*?</a>$|ims', '', $content_lists[$key]);
+            }
+            $content = implode(' ', $content_lists);
+        }
+        //过滤最前和最后的链接
+        while (true) {
+            $loop = false;
+            $str = trim(strip_tags(str_replace('&nbsp;', '', $content), '<a>'));
+            if(0 === strpos($str, '<a ')){
+                $loop = true;
+                $content = preg_replace('|<a .*?</a>|ims', '', $content, 1);
+            }
+            $strrpos = strrpos($str, '</a>');
+            if(false != $strrpos && (strlen($str) - strlen('</a>')) == strrpos($str, '</a>')){
+                $loop = true;
+                $str_start = strrpos($content, '<a ');
+                $content = substr($content, 0, $str_start);
+            }
+            if(! $loop) break;
+        }
 
         $content = strip_tags($content, '<ul><li><br><p>');
         //去除标签属性
