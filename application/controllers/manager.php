@@ -115,10 +115,10 @@ class Manager extends CI_Controller {
      * 重新抓取
      * @param string $url
      */
-    public function recrawl()
+    public function recrawl($url='')
     {
-        if(!empty($_GET['url'])){
-            $rel_info = $this->relation_model->findOneByUrl($_GET['url']);
+        if(!empty($url)){
+            $rel_info = $this->relation_model->findOneByUrl(urldecode($url));
             $lists = array($rel_info);
         }else{
             //清空队列
