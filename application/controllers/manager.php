@@ -116,7 +116,7 @@ class Manager extends CI_Controller {
      * 重新抓取
      * @param string $url
      */
-    public function re_crawl($url='')
+    public function re_crawl()
     {
 
             $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
