@@ -116,7 +116,7 @@ class Manager extends CI_Controller {
      * 重新抓取
      * @param string $url
      */
-    public function recrawl($url='')
+    public function re_crawl($url='')
     {
 
 
