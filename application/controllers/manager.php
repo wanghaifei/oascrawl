@@ -119,7 +119,6 @@ class Manager extends CI_Controller {
     public function re_crawl($url='')
     {
 
-
             $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
             $rel_info = $this->relation_model->find($condition);
             print_r($rel_info);exit;
