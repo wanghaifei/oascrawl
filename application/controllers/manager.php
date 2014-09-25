@@ -118,29 +118,12 @@ class Manager extends CI_Controller {
      */
     public function recrawl($url='')
     {
-        if(!empty($url)){
+
 
             $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
             $rel_info = $this->relation_model->find($condition);
             print_r($rel_info);exit;
-        }else{
-            //清空队列
-            while (true) {
-                $queue_info = $this->queue_model->get_queue(self::Q_RELATION);
-                if(empty($queue_info)) break;
-            }
-            $lists = $this->relation_model->find(array(), 0, 0);
-        }
-        print_r($lists);
-        foreach ((array)$lists as $rel_info) {
-            //删除缓存
-            $this->redis_model->del_redis_cache('url_relation', $rel_info['url']);
-            //更改抓取状态
-            $this->relation_model->update_nexttime($rel_info['_id'], true);
-            $this->relation_model->update_lasttime($rel_info['_id'], true);
-            $this->relation_model->add_lastcount($rel_info['_id'], 0, true);
-            $this->relation_model->update_status($rel_info['_id'], 0);
-        }
+
     }
 
     /**
