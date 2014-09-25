@@ -53,6 +53,8 @@ class Manager extends CI_Controller {
      */
     public function add_relation()
     {
+        //$pid, $url, $tags, $with_pic, $classid, $rule_id
+
         //http://www.lazland.com/komikresim/default.asp?S=EB
         $this->relation_model->add(0, 'http://www.lazland.com/komikresim/default.asp?Start=0', array(), 1, 1, 0);
     }
