@@ -41,11 +41,12 @@ class Relation_model extends CI_Model {
     function __construct() {
         parent::__construct();
 
-        $this->load->config('setting');
         $this->load->library('mongo_db');
         $this->mongo_db->switch_db($this->db);
-    }
 
+        $this->load->config('setting');
+
+    }
     /**
      * @access public
      * @param array/string $condition 要查寻的条件 [Optional]
