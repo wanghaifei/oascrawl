@@ -123,6 +123,7 @@ class Manager extends CI_Controller {
             $rel_info = $this->relation_model->find(array('_id'=>'57670788f0e00a7c533cbd6789bac7ca'));
             print_r($rel_info);exit;
 
+
             $lists = array($rel_info);
         }else{
             //清空队列
