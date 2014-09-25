@@ -55,6 +55,7 @@ class Relation_model extends CI_Model {
      * @return array $mixed
      */
     public function find($condition=array(), $offset=0, $limit=20, $total = false){
+        echo $this->mongo_db->dbname;
         if( ! empty($condition) ) {
             $this->mongo_db->where($condition);
         }
