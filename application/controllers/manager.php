@@ -32,9 +32,7 @@ class Manager extends CI_Controller {
     public function find_class()
     {
         $id = '53c8f7f1eb8be2e6498b4567';
-
-        $info = array('_id'=>new MongoId("$id"));
-        $result = $this->class_model->findOne($info);
+        $result = $this->class_model->findOneByID($id);
         print_r($result);
     }
 
