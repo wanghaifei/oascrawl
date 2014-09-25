@@ -128,6 +128,7 @@ class Manager extends CI_Controller {
             }
             $lists = $this->relation_model->find(array(), 0, 0);
         }
+        print_r($lists);
         foreach ((array)$lists as $rel_info) {
             //删除缓存
             $this->redis_model->del_redis_cache('url_relation', $rel_info['url']);
