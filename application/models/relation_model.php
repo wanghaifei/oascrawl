@@ -86,8 +86,7 @@ class Relation_model extends CI_Model {
      */
     public function findOneByID($id)
     {
-        $condition = array('_id'=>"$id");
-        print_r($condition);
+        $condition = array('_id'=>strval($id));
         return $this->findOne($condition);
     }
 
