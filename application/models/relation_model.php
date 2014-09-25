@@ -43,7 +43,6 @@ class Relation_model extends CI_Model {
 
         $this->load->config('setting');
         $this->load->library('mongo_db');
-        $db = $this->config->item('mongo_db');
         $this->mongo_db->switch_db($this->db);
     }
 
