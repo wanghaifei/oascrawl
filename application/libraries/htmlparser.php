@@ -524,7 +524,6 @@ class htmlparser {
                         //删除more链接
                         if(! strstr($content_lists[$key_1], '<img ') && mb_strlen($content_lists[$key_1]) < 30) $html = str_replace($content_lists[$key_1], '', $html);
                     }
-
                     foreach ($content_lists as $key=>$content)
                     {
                         $temp_content = trim(strip_tags($content));
@@ -535,6 +534,7 @@ class htmlparser {
                             break;
                         }
                     }
+                    if(empty($url)) continue;
                     //抓取url存在于列表中,则跳过
                     if($this->crawl_url == $url) return false;
 
