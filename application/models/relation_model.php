@@ -64,7 +64,6 @@ class Relation_model extends CI_Model {
         }
         $limit && $this->mongo_db->limit($limit);
         $offset && $this->mongo_db->offset($offset);
-        echo $this->tags_coll;
         return $this->mongo_db->get($this->tags_coll);
     }
 

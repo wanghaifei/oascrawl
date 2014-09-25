@@ -111,6 +111,7 @@ class Manager extends CI_Controller {
         print_r($lists);
     }
 
+
     /**
      * 重新抓取
      * @param string $url
@@ -154,5 +155,13 @@ class Manager extends CI_Controller {
                 $this->redis_model->del_redis_cache('url_relation', $crawl_info['url']);
             }
         }
+    }
+
+    public function test()
+    {
+        $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
+        $rel_info = $this->relation_model->find($condition);
+        print_r($rel_info);exit;
+        $lists = array($rel_info);
     }
 }
