@@ -31,7 +31,7 @@ class Manager extends CI_Controller {
 
     public function find_class()
     {
-        $info = array('_id'=>new MongoId('53c8f7f1eb8be2e6498b4567'));
+        $info = array('classid'=>1);
         $result = $this->class_model->findOne($info);
         print_r($result);
     }
@@ -118,12 +118,7 @@ class Manager extends CI_Controller {
     public function recrawl($url='')
     {
         if(!empty($url)){
-            print_r($url);
-
-            $rel_info = $this->relation_model->find(array('_id'=>'57670788f0e00a7c533cbd6789bac7ca'));
-            print_r($rel_info);exit;
-
-
+            $rel_info = $this->relation_model->findOneByUrl(urldecode($url));
             $lists = array($rel_info);
         }else{
             //清空队列
@@ -133,7 +128,6 @@ class Manager extends CI_Controller {
             }
             $lists = $this->relation_model->find(array(), 0, 0);
         }
-        print_r($lists);exit;
         foreach ((array)$lists as $rel_info) {
             //删除缓存
             $this->redis_model->del_redis_cache('url_relation', $rel_info['url']);
