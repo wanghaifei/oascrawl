@@ -122,7 +122,7 @@ class Manager extends CI_Controller {
             $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
             $rel_info = $this->relation_model->find($condition);
             print_r($rel_info);exit;
-
+            $lists = array($rel_info);
     }
 
     /**
