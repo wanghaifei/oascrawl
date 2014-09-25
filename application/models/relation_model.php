@@ -87,7 +87,7 @@ class Relation_model extends CI_Model {
     public function findOneByID($id)
     {
         $condition = array('_id'=>"57670788f0e00a7c533cbd6789bac7ca");
-        return $this->findOne($condition);
+        return $this->find($condition);
     }
 
     /**
