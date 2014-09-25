@@ -118,7 +118,8 @@ class Manager extends CI_Controller {
     public function recrawl($url='')
     {
         if(!empty($url)){
-            $rel_info = $this->relation_model->findOneByUrl(urldecode($url));
+            $condition = array('_id'=>md5(urldecode($url)));
+            $rel_info = $this->relation_model->find($condition);
             $lists = array($rel_info);
         }else{
             //清空队列
