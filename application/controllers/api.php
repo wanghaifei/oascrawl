@@ -58,7 +58,7 @@ class Api extends CI_Controller {
 
         $this->detail_model->setTableName($coll);
 
-        if(!is_numeric($previous_cursor) || $previous_cursor === 0){
+        if(!is_numeric($previous_cursor) || $previous_cursor == 0){
             list($usec, $sec) = explode(" ",microtime());
             $previous_cursor = intval($sec*1000000) + intval($usec*1000000);
         }
