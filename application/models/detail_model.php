@@ -90,13 +90,15 @@ class Detail_model extends CI_Model {
     public function findByLtMs($previous_cursor, $status = 1, $with_pic, $limit = 20)
     {
         $this->mongo_db->where(array('status'=>$status));
-        $this->mongo_db->where_lt('mcreated', $previous_cursor);
+
+        $this->mongo_db->order_by(array('mcreated'=>-1));
+
+        $this->mongo_db->where_lt('mcreated', floatval($previous_cursor));
 
         if($with_pic == 1) $this->mongo_db->where(array('with_pic'=>1));
         if($with_pic == 2) $this->mongo_db->where_ne('with_pic', 1);
 
         $this->mongo_db->limit($limit);
-        $this->mongo_db->order_by(array('mcreated'));
 
         return $this->mongo_db->get($this->detail_table);
     }
