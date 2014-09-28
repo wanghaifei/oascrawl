@@ -113,7 +113,7 @@ class Crontab extends CI_Controller {
         $relation_lists = $this->htmlparser->start($crawl_info['url'], 2, $crawl_info['with_pic'],  $crawl_info['rule_id']);
 
         if(empty($relation_lists) && empty($url) && $this->htmlparser->recrawl){
-            $this->queue_model->add_queue(self::Q_FEED, $crawl_info);
+            $this->queue_model->add_queue(self::Q_RELATION, $crawl_info);
             return false;
         }
 
@@ -188,7 +188,7 @@ class Crontab extends CI_Controller {
         $detail_info = $this->htmlparser->start($crawl_info['url'], 3, $crawl_info['with_pic'],  $crawl_info['rule_id']);
 
         if(empty($detail_info) && empty($url) && $this->htmlparser->recrawl){
-            $this->queue_model->add_queue(self::Q_FEED, $crawl_info);
+            $this->queue_model->add_queue(self::Q_DETAIL, $crawl_info);
             return false;
         }
         pr_exe_process(HTML_INFO, print_r($detail_info, true));
