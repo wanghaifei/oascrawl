@@ -162,9 +162,9 @@ class Manager extends CI_Controller {
         $lists = array($rel_info);
     }
     public  function get_tags(){
+        header("Content-type: text/html; charset=utf-8");
 
         $lists = array();
-
         if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
             foreach ($unlock_lists as $crawl_info) {
                 $lists = array_merge($lists, $crawl_info['tags']);
