@@ -161,4 +161,21 @@ class Manager extends CI_Controller {
         print_r($rel_info);exit;
         $lists = array($rel_info);
     }
+    public  function get_tags(){
+
+        $lists = array();
+
+        if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
+            foreach ($unlock_lists as $crawl_info) {
+                $lists = array_merge($lists, $crawl_info);
+            }
+        }
+        $lists = array_unique($lists);
+
+        foreach($lists as $tag){
+            echo $tag."<br>";
+        }
+
+
+    }
 }
