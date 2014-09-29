@@ -172,7 +172,7 @@ class Manager extends CI_Controller {
                 foreach($crawl_info['tags'] as $tag){
                     if(in_array($tag, $print_lists)) continue;
                     $print_lists[] = $tag;
-                    echo $type."\t".$tag;
+                    echo $type."\t".$tag."<br>";
                 }
             }
         }
