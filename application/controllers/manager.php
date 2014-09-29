@@ -167,7 +167,7 @@ class Manager extends CI_Controller {
 
         if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
             foreach ($unlock_lists as $crawl_info) {
-                $lists = array_merge($lists, $crawl_info);
+                $lists = array_merge($lists, $crawl_info['tags']);
             }
         }
         $lists = array_unique($lists);
