@@ -165,17 +165,16 @@ class Manager extends CI_Controller {
         header("Content-type: text/html; charset=utf-8");
 
         $lists = array();
+        $print_lists = array();
         if ($unlock_lists = $this->relation_model->find(array(), 0, 0)) {
             foreach ($unlock_lists as $crawl_info) {
-                $lists = array_merge($lists, $crawl_info['tags']);
+                $type = $crawl_info['with_pic'] == 1 ? '图片':'段子';
+                foreach($crawl_info['tags'] as $tag){
+                    if(in_array($tag, $print_lists)) continue;
+                    $print_lists[] = $tag;
+                    echo $type."\t".$tag;
+                }
             }
         }
-        $lists = array_unique($lists);
-
-        foreach($lists as $tag){
-            echo $tag."<br>";
-        }
-
-
     }
 }
